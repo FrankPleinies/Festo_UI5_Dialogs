@@ -30,7 +30,7 @@ sap.ui.define([
 
 		onInit: function () {
 			// apply compact density if touch is not supported, the standard cozy design otherwise
-			this.getView().addStyleClass(Device.support.touch ? "sapUiSizeCozy" : "sapUiSizeCompact");
+			//this.getView().addStyleClass(Device.support.touch ? "sapUiSizeCozy" : "sapUiSizeCompact");
 
 			this.checkWhNumberAndWorkstation();
 
