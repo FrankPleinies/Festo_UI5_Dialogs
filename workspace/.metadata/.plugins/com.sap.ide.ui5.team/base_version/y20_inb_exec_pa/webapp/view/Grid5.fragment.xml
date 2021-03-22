@@ -1,0 +1,29 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout" xmlns:acm="y20_inb_exec_pa.controller">
+	<VBox height="24rem">
+		<VBox height="70%">
+			<VBox id="ShelfDisplay"  class="sapUiLargeMarginBottom" alignContent="End" width="100%" height="100%" alignItems="Center" justifyContent="Center">
+				<items>
+				</items>
+			</VBox>
+		</VBox>
+		<VBox height="30%">
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_ScanDest}" wrapping="false" class="customTextSmall sapUiMediumMarginTop"/>
+					<!-- <Input value="" id="scanDest" submit="onVerifyDest" class="customInput sapUiMediumMarginTop"/> -->
+					<acm:ScanInput id="scanDest" submit="onVerifyDest" class="customInput sapUiMediumMarginTop">
+						<acm:attributes>
+							<core:CustomData key="inputmode" value="{ELEMENTS>/keyboard/inputmode}" writeToDom="true"/>
+						</acm:attributes>
+					</acm:ScanInput>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="Center" alignItems="End">
+				<items>
+					<ToggleButton id="tgbtn_chgDst" text="{i18n>BtnChgDst}" enabled="{nextWT>/ChnDestBinAllow}" pressed="{ELEMENTS>/btn_chgDst/pressed}" press="onPress" class="sapUiTinyMarginTop customButton"/>
+				</items>
+			</FlexBox>
+		</VBox>
+	</VBox>
+
+</core:FragmentDefinition>

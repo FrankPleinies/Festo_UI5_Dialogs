@@ -1,0 +1,14 @@
+<core:FragmentDefinition xmlns="sap.m"
+    xmlns:l="sap.ui.layout"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:core="sap.ui.core">
+    <Dialog title="{i18n>information}" id="popupDialogInfo" class="sapUiContentPadding">
+        <List items="{
+			path: 'informationCollectionModel>/results'}">
+            <StandardListItem title="{informationCollectionModel>TEXT}"/>
+        </List>
+        <buttons>
+            <Button text="{i18n>close}" press="onCloseInfoDialog" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

@@ -1,0 +1,167 @@
+.sapUiBlockLayoutSizeM:not(.sapUiBlockLayoutKeepFontSize) .smallPaddingCustom .sapUiBlockCellContent,
+.sapUiBlockLayoutSizeL:not(.sapUiBlockLayoutKeepFontSize) .smallPaddingCustom .sapUiBlockCellContent,
+.sapUiBlockLayoutSizeXL:not(.sapUiBlockLayoutKeepFontSize) .smallPaddingCustom .sapUiBlockCellContent,
+.sapUiBlockLayoutSizeS:not(.sapUiBlockLayoutKeepFontSize) .smallPaddingCustom .sapUiBlockCellContent {
+    padding: 7.5px
+}
+
+.customTopBorder .sapUiBlockCellContent {
+    margin-bottom: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0
+}
+
+.customButtomBorder .sapUiBlockCellContent {
+    margin-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.customBiggerFontSize {
+    font-size: 24px;
+}
+
+.customContentLayout {
+	background-color: #717D86;
+}
+
+.customHeader .sapMIBar-CTX .sapMTitle {
+	font-size: 1.8rem;
+    font-weight: bold;
+    padding-left: 0ex;
+}
+
+/* StandardInputField Style  when focused*/
+.sapMInputBaseInner:focus {
+background-color: #C8E6FA;/*#99CCFF -> soft blue; */
+}
+
+.greaterText {
+	font-size: 2rem;
+}
+
+button .sapMBtnContent {
+ 	font-size: 1.5rem;
+ }
+
+ /* button .sapMBtnInner  {
+    background-color: #0091DC;
+    color: white;
+} */
+
+span.sapMText {
+    font-size: 1.2rem;
+}
+ 
+.customLabel {
+	font-size: 1.2rem;
+    padding-bottom: 10px;
+}
+
+.customLabelBig {
+	font-size: 1.5rem;
+	font-style: bold;
+    padding-bottom: 10px;
+}
+
+.customCellHeader > div > h2 {
+    font-weight: bold;
+    background-color: #D0D6DC;
+    padding-left: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+
+/******************************************/
+/* Blue arrow button style                */
+/******************************************/
+.actionButton .sapMBtnInner {
+font-size: 2.5rem;
+border-color: transparent;
+background-color: transparent;
+color: white;
+vertical-align: middle;
+text-align: center;
+height: 200px;
+padding-top: 75px;
+}
+.actionButton.sapMBtn:hover>.sapMBtnHoverable {
+background-color: transparent;
+color: white;
+font-size: 2.5rem;
+border-color: transparent;
+}
+.actionButton.sapMBtn:hover>.sapMBtnHoverable .sapMBtnContent{
+background-color: transparent;
+color: white;
+font-size: 2.5rem;
+border-color: transparent;
+}
+
+
+
+/******************************************/
+/* Messages								  */
+/******************************************/
+/* Style definition for the message text */
+.sapMMsgStripMessage .sapMText {
+    font-size: 1.5rem;
+}
+
+/******************************************/
+/* Footer line							  */
+/******************************************/
+/* Background color VBox */
+.footerBox {
+    background-color: #D0D6DC;
+}
+/* Background color HBox */
+.footer {
+    background-color: #D0D6DC;
+}
+
+/******************************************/
+/* Arrow action button  				  */
+/******************************************/
+/* The blue arrow action button */
+.arrowButton {
+background: url('../img/arrow_right.png') no-repeat; 
+ background-color: #717D86; 
+background-size: 100% 100%;
+
+
+}
+
+/******************************************/
+/* Stack image  				  */
+/******************************************/
+/* Represents an stack */
+.stack {
+/*background-image: url('../img/Stack.png'); 
+background-size: 100% 100%;*/
+background: url(../img/Stack4.png) no-repeat; 
+background-size: 100% 100%;
+/* background-color: blue; */ 
+margin-right: 20px;
+
+}
+.item1 {
+/*background-image: url('../img/Stack.png'); 
+background-size: 100% 100%;*/
+background: url(../img/Item_relevant.png) no-repeat; 
+background-size: 100% 100%;
+margin-right: 20px;
+margin-left: 20px;
+
+/* background-color: blue; */
+
+}
+.item2 {
+/*background-image: url('../img/Stack.png'); 
+background-size: 100% 100%;*/
+background: url(../img/Item_notrelevant.png) no-repeat; 
+background-size: 100% 100%;
+/* background-color: blue; */
+padding: 0px;
+}

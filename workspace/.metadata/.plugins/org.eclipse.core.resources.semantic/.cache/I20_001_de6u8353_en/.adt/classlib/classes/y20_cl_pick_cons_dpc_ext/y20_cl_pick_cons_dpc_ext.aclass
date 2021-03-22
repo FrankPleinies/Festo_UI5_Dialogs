@@ -1,0 +1,1175 @@
+CLASS y20_cl_pick_cons_dpc_ext DEFINITION
+  PUBLIC
+  INHERITING FROM y20_cl_pick_cons_dpc
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+
+    TYPES:
+      BEGIN OF ts_source_storage_bin,
+        vlpla TYPE /scwm/ltap_vlpla,
+      END OF ts_source_storage_bin .
+    TYPES:
+      tt_source_storage_bin TYPE STANDARD TABLE OF ts_source_storage_bin WITH NON-UNIQUE KEY table_line .
+
+    METHODS /iwbep/if_mgw_appl_srv_runtime~get_expanded_entity
+        REDEFINITION .
+    METHODS /iwbep/if_mgw_appl_srv_runtime~create_deep_entity
+        REDEFINITION .
+  PROTECTED SECTION.
+private section.
+
+  data MT_OBD_DESTINATIONS type Y20_T_PCON_BIN_ODO_DEST .
+  data MO_CONTAINER type ref to /IWBEP/IF_MESSAGE_CONTAINER .
+  data MV_LGNUM type /SCWM/LGNUM .
+  data:
+    BEGIN OF ms_entity.
+        INCLUDE TYPE y20_cl_pick_cons_mpc_ext=>ts_scansourceent.
+    DATA: scan_bincontent           TYPE y20_t_pcon_bin_content,
+        scan_binobddestinations   TYPE y20_t_pcon_bin_odo_dest,
+        scan_popuprackcoordinates TYPE  y20_t_pcon_bin_popup,
+      END OF ms_entity .
+
+  methods HANDLE_REQUEST
+    returning
+      value(RV_SUCCESS) type ABAP_BOOL .
+  methods ADD_MESSAGE_TO_ODATA_CONTAINER
+    importing
+      !IT_BAPIRET type BAPIRETTAB optional .
+  methods CONFIRM_TASKS
+    importing
+      !IT_ORDIM type /SCWM/TT_ORDIM_O
+    raising
+      /IWBEP/CX_MGW_TECH_EXCEPTION .
+  methods READ_OPEN_TASKS_PER_BIN
+    importing
+      !IV_LGPLA type /SCWM/DE_LGPLA
+    returning
+      value(RT_DATA) type /SCWM/TT_ORDIM_O .
+  methods VALIDATE_AND_SET_LGNUM
+    importing
+      !IV_LGNUM type /SCWM/LGNUM optional
+    raising
+      /IWBEP/CX_MGW_TECH_EXCEPTION .
+  methods HANDLE_MESSAGES
+    importing
+      !IO_LOG type ref to Y20_CL_LOG optional .
+  methods RAISE_EXCEPTION
+    raising
+      /IWBEP/CX_MGW_TECH_EXCEPTION .
+  methods READ_DELIVERIES_FROM_HUITEM
+    importing
+      !IT_HUITEM type /SCWM/TT_HUITM_INT
+    returning
+      value(RT_HEADERS) type /SCWM/DLV_HEADER_OUT_PRD_TAB .
+  methods READ_DELIVERIES_FROM_TASKS
+    importing
+      !IT_ORDIM_O type /SCWM/TT_ORDIM_O
+    returning
+      value(RT_HEADERS) type /SCWM/DLV_HEADER_OUT_PRD_TAB .
+  methods CALC_BIN_CONTENT
+    importing
+      !IV_LGPLA type /SCWM/DE_LGPLA
+    returning
+      value(RT_RESULT) type Y20_T_PCON_BIN_CONTENT .
+  methods CALC_BIN_DESTINATIONS
+    importing
+      !IV_LGPLA type /SCWM/DE_LGPLA
+    returning
+      value(RT_RESULT) type Y20_T_PCON_BIN_ODO_DEST .
+  methods CALC_PICK_HU_DESTINATIONS
+    importing
+      !IV_HUIDENT type /SCWM/HUIDENT
+    changing
+      !CT_OBD_DESTINATIONS type Y20_T_PCON_BIN_ODO_DEST .
+  methods READ_RACK_COORDINATES_OF_DLV
+    importing
+      !IV_DELIVERY_ID type /SCDL/DL_DOCID
+    returning
+      value(RT_RESULT) type TT_SOURCE_STORAGE_BIN .
+  methods READ_TASKS_BY_HUIDENT_AND_SLOC
+    importing
+      !IT_HUIDENT type /SCWM/TT_HUIDENT
+    exporting
+      !ET_ORDIM_O type /SCWM/TT_ORDIM_O
+      !ET_ORDIM_C type /SCWM/TT_ORDIM_C
+    raising
+      /IWBEP/CX_MGW_TECH_EXCEPTION .
+  methods SORT_OBD_DESTINATIONS
+    importing
+      !IT_DATA type Y20_T_PCON_BIN_ODO_DEST
+    returning
+      value(RT_DATA) type Y20_T_PCON_BIN_ODO_DEST .
+  methods CALC_BIN_ALERTS
+    importing
+      !IV_LGPLA type /SCWM/DE_LGPLA
+    returning
+      value(RT_RESULT) type Y20_T_PCON_BIN_POPUP .
+ENDCLASS.
+
+
+
+CLASS Y20_CL_PICK_CONS_DPC_EXT IMPLEMENTATION.
+
+
+METHOD /iwbep/if_mgw_appl_srv_runtime~create_deep_entity.
+
+  " ------------------------------------------ "
+  " Local Declarations..
+  " ------------------------------------------ "
+  " ------------------------------------------ "
+  "  Processing Logic..
+  " ------------------------------------------ "
+  IF iv_entity_name <> y20_cl_pick_cons_mpc=>gc_scan.
+    RETURN.
+  ENDIF.
+
+  io_data_provider->read_entry_data( IMPORTING es_data = ms_entity ).
+  validate_and_set_lgnum( ms_entity-lgnum ).
+
+  IF handle_request( ).
+
+    copy_data_to_ref(
+    EXPORTING
+      is_data = ms_entity
+    CHANGING
+      cr_data = er_deep_entity ).
+
+  ENDIF.
+
+ENDMETHOD.
+
+
+METHOD /iwbep/if_mgw_appl_srv_runtime~get_expanded_entity.
+
+  DATA: lv_lgpla   TYPE /scwm/de_lgpla.
+  DATA: lv_lgnum   TYPE /scwm/lgnum.
+
+  CLEAR: et_expanded_clauses, et_expanded_tech_clauses.
+
+  IF iv_entity_name <> y20_cl_pick_cons_mpc=>gc_scan.
+    RETURN.
+  ENDIF.
+
+  TRY.
+
+      LOOP AT it_key_tab ASSIGNING FIELD-SYMBOL(<ls_key_odata_appl>).
+        IF <ls_key_odata_appl>-name = y20_cl_pick_cons_mpc_ext=>mc_property_name-lgnum.
+          lv_lgnum = <ls_key_odata_appl>-value.
+          validate_and_set_lgnum( lv_lgnum ).
+        ELSEIF <ls_key_odata_appl>-name = y20_cl_pick_cons_mpc_ext=>mc_property_name-storagebin.
+          lv_lgpla = <ls_key_odata_appl>-value.
+        ENDIF.
+      ENDLOOP.
+
+    CATCH /iwbep/cx_mgw_tech_exception.
+      handle_messages( ).
+      RETURN.
+  ENDTRY.
+
+  ms_entity-lgnum = lv_lgnum.
+  ms_entity-scan = lv_lgpla.
+
+  IF handle_request( ).
+
+    copy_data_to_ref(
+      EXPORTING
+        is_data = ms_entity
+      CHANGING
+        cr_data = er_entity ).
+
+    APPEND 'SCAN_BINCONTENT'  TO et_expanded_tech_clauses.
+    APPEND 'SCAN_BINOBDDESTINATIONS' TO et_expanded_tech_clauses.
+    APPEND 'SCAN_POPUPRACKCOORDINATES' TO et_expanded_tech_clauses.
+
+  ENDIF.
+
+ENDMETHOD.
+
+
+  METHOD add_message_to_odata_container.
+    IF mo_container IS NOT BOUND.
+      mo_container = mo_context->get_message_container( ).
+    ENDIF.
+
+    IF mo_container IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    IF lines( it_bapiret ) = 0.
+      mo_container->add_message(
+          iv_msg_type    = sy-msgty
+          iv_msg_id      = sy-msgid
+          iv_msg_number  = sy-msgno
+          iv_msg_v1      = sy-msgv1
+          iv_msg_v2      = sy-msgv2
+          iv_msg_v3      = sy-msgv3
+          iv_msg_v4      = sy-msgv4
+          iv_add_to_response_header = abap_true ).
+      RETURN.
+    ENDIF.
+
+    DATA(lt_messages) = it_bapiret.
+    " want to delete messages from message log class
+    " send to UI only messages relevant to the current application
+    DELETE lt_messages WHERE id = 'Y20_MESSAGE_LOG'.
+
+    LOOP AT lt_messages ASSIGNING FIELD-SYMBOL(<ls_message>).
+      mo_container->add_message(
+        EXPORTING
+          iv_msg_type    = <ls_message>-type
+          iv_msg_id      = <ls_message>-id
+          iv_msg_number  = <ls_message>-number
+          iv_msg_v1      = <ls_message>-message_v1
+          iv_msg_v2      = <ls_message>-message_v2
+          iv_msg_v3      = <ls_message>-message_v3
+          iv_msg_v4      = <ls_message>-message_v4
+          iv_add_to_response_header = abap_true ).
+    ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD calc_bin_alerts.
+*************************************************************************
+** Company     : Swisslog AG
+** Package     : Y20_UI_UI5_PCON
+** Description : Set output data.
+*************************************************************************
+** REVISIONS:
+** ---------
+**
+** Ver. ¦Date      ¦Author        ¦Description
+** -----¦----------¦--------------¦--------------------------------------
+** 1.0  ¦2020-06-12¦G.Slavov      ¦Initial
+**
+*************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA: lt_huitem  TYPE /scwm/tt_huitm_int.
+    DATA: ls_result  TYPE y20_s_pcon_bin_popup.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+
+    ls_result-bin = iv_lgpla.
+    ls_result-lgnum = mv_lgnum.
+
+    CALL FUNCTION '/SCWM/HU_SELECT_GEN'
+      EXPORTING
+        iv_lgnum     = mv_lgnum
+        ir_lgpla     = VALUE rseloption( ( sign   = wmegc_sign_inclusive
+                                           option = wmegc_option_eq
+                                           low    = iv_lgpla ) )
+        ir_vhi       = VALUE rseloption( ( sign   = wmegc_sign_inclusive
+                                           option = wmegc_option_eq
+                                           low    = wmegc_vhi_real ) )
+      IMPORTING
+        et_huitm     = lt_huitem
+      EXCEPTIONS
+        wrong_input  = 1
+        not_possible = 2
+        OTHERS       = 3.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    LOOP AT read_deliveries_from_huitem( lt_huitem ) ASSIGNING FIELD-SYMBOL(<ls_dlv_header>).
+
+      DATA(lt_rack_coordinates) = read_rack_coordinates_of_dlv( <ls_dlv_header>-docid ).
+      IF lines( lt_rack_coordinates ) > 1.
+        LOOP AT lt_rack_coordinates ASSIGNING FIELD-SYMBOL(<ls_rack_coordinate>).
+
+          ls_result-docno = <ls_dlv_header>-docno.
+          ls_result-storage_bin = <ls_rack_coordinate>-vlpla.
+          APPEND ls_result TO rt_result.
+
+        ENDLOOP.
+      ENDIF.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD calc_bin_content.
+*************************************************************************
+** Company     : Swisslog AG
+** Package     : Y20_UI_UI5_PCON
+** Description : Set output data. Map data to display fields, sort output
+**                 info grouped by destination storage type
+*************************************************************************
+** REVISIONS:
+** ---------
+**
+** Ver. ¦Date      ¦Author        ¦Description
+** -----¦----------¦--------------¦--------------------------------------
+** 1.0  ¦2020-06-10¦G.Slavov     ¦Initial
+**
+*************************************************************************
+*    " ------------------------------------------ "
+*    " Local Declarations..
+*    " ------------------------------------------ "
+    DATA: lt_huhdr       TYPE /scwm/tt_huhdr_int,
+          lt_huitem      TYPE /scwm/tt_huitm_int,
+          lt_ordim_o     TYPE /scwm/tt_ordim_o,
+          ls_bin_content TYPE y20_s_pcon_bin_content.
+
+    DATA: lo_stock TYPE REF TO /scwm/cl_ui_stock_fields.
+    CREATE OBJECT lo_stock.
+
+*    " ------------------------------------------ "
+*    "  Processing Logic..
+*    " ------------------------------------------ "
+
+    ls_bin_content-bin = iv_lgpla.
+    ls_bin_content-lgnum = mv_lgnum.
+
+    CALL FUNCTION '/SCWM/HU_SELECT_GEN'
+      EXPORTING
+        iv_lgnum     = mv_lgnum
+        ir_lgpla     = VALUE rseloption( ( sign   = wmegc_sign_inclusive
+                                           option = wmegc_option_eq
+                                           low    = iv_lgpla ) )
+        ir_vhi       = VALUE rseloption( ( sign   = wmegc_sign_inclusive
+                                           option = wmegc_option_eq
+                                           low    = wmegc_vhi_real ) )
+      IMPORTING
+        et_huhdr     = lt_huhdr
+        et_huitm     = lt_huitem
+      EXCEPTIONS
+        wrong_input  = 1
+        not_possible = 2
+        OTHERS       = 3.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    DATA(lt_dlv_headers) = read_deliveries_from_huitem( lt_huitem ).
+
+    LOOP AT lt_huitem ASSIGNING FIELD-SYMBOL(<ls_huitem>).
+
+      lo_stock->get_matkey_by_id(
+                                  EXPORTING iv_matid = <ls_huitem>-matid
+                                  IMPORTING ev_matnr = ls_bin_content-product ).
+
+      ASSIGN lt_huhdr[ guid_hu = <ls_huitem>-guid_parent ] TO FIELD-SYMBOL(<ls_huhdr>).
+      CHECK sy-subrc  = 0.
+      ls_bin_content-pos = <ls_huhdr>-logpos.
+      ls_bin_content-pickhu = <ls_huhdr>-huident.
+
+      CLEAR lt_ordim_o.
+      CALL FUNCTION '/SCWM/TO_READ_SRC'
+        EXPORTING
+          iv_lgnum     = mv_lgnum
+          iv_huident   = <ls_huhdr>-huident
+        IMPORTING
+          et_ordim_o   = lt_ordim_o
+        EXCEPTIONS
+          wrong_input  = 1
+          not_found    = 2
+          foreign_lock = 3
+          OTHERS       = 4.
+
+      IF sy-subrc <> 0 OR lt_ordim_o IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      ASSIGN lt_dlv_headers[ docid = <ls_huitem>-qdocid ] TO FIELD-SYMBOL(<ls_dlv_head>).
+      IF sy-subrc = 0.
+        ls_bin_content-poolname = <ls_dlv_head>-eew-zzpoolname.
+      ENDIF.
+
+      APPEND ls_bin_content TO rt_result.
+
+    ENDLOOP.
+
+    SORT rt_result BY pos.
+    DELETE ADJACENT DUPLICATES FROM rt_result.
+
+  ENDMETHOD.
+
+
+  METHOD calc_bin_destinations.
+*************************************************************************
+** Company     : Swisslog AG
+** Package     : Y20_UI_UI5_PCON
+** Description : Set output data. Map data to display fields, sort output
+**                 info grouped by destination storage type
+*************************************************************************
+** REVISIONS:
+** ---------
+**
+** Ver. ¦Date      ¦Author        ¦Description
+** -----¦----------¦--------------¦--------------------------------------
+** 1.0  ¦2020-06-10¦G.Slavov     ¦Initial
+**
+*************************************************************************
+*    " ------------------------------------------ "
+*    " Local Declarations..
+*    " ------------------------------------------ "
+    DATA: lt_ordim_o  TYPE /scwm/tt_ordim_o.
+    DATA: ls_result   TYPE y20_s_pcon_bin_odo_dest.
+    DATA: lt_hu_hdr   TYPE /scwm/tt_huhdr_int.
+*    " ------------------------------------------ "
+*    "  Processing Logic..
+*    " ------------------------------------------ "
+    ls_result-lgnum = mv_lgnum.
+    ls_result-bin = iv_lgpla.
+
+    lt_ordim_o = read_open_tasks_per_bin( iv_lgpla ).
+    IF lt_ordim_o IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    LOOP AT lt_ordim_o ASSIGNING FIELD-SYMBOL(<ls_ordim_o>) WHERE dguid_hu IS NOT INITIAL.
+
+      CLEAR lt_hu_hdr.
+
+      CALL FUNCTION '/SCWM/HU_SELECT_GEN'
+        EXPORTING
+          iv_lgnum     = mv_lgnum
+          it_guid_hu   = VALUE /scwm/tt_guid_hu( ( guid_hu = <ls_ordim_o>-sguid_hu ) )
+        IMPORTING
+          et_huhdr     = lt_hu_hdr
+        EXCEPTIONS
+          wrong_input  = 1
+          not_possible = 2
+          error        = 3
+          OTHERS       = 4.
+
+      IF sy-subrc <> 0.
+        CONTINUE.
+      ENDIF.
+
+      IF lines( lt_hu_hdr ) = 1.
+        ls_result-hu = lt_hu_hdr[ 1 ]-huident.
+      ELSE.
+        CLEAR ls_result-hu.
+      ENDIF.
+
+      ls_result-dest_st_type = <ls_ordim_o>-nltyp.
+      ls_result-destination = <ls_ordim_o>-nlpla.
+
+      DATA(lt_dlv_headers) = read_deliveries_from_tasks( VALUE #( ( <ls_ordim_o> ) ) ).
+
+      ASSIGN lt_dlv_headers[ 1 ] TO FIELD-SYMBOL(<ls_dlv_head>).
+      IF sy-subrc = 0.
+        ls_result-docno = |{  <ls_dlv_head>-docno ALPHA = OUT }|.
+      ENDIF.
+
+      APPEND ls_result TO rt_result.
+    ENDLOOP.
+
+    APPEND LINES OF rt_result TO mt_obd_destinations.
+    rt_result = sort_obd_destinations( mt_obd_destinations ).
+
+    DELETE ADJACENT DUPLICATES FROM rt_result.
+
+  ENDMETHOD.
+
+
+  METHOD calc_pick_hu_destinations.
+*************************************************************************
+** Company     : Swisslog AG
+** Package     : Y20_UI_UI5_PCON
+** Description : Set output data. Map data to display fields, sort output
+**                 info grouped by destination storage type
+*************************************************************************
+** REVISIONS:
+** ---------
+**
+** Ver. ¦Date      ¦Author        ¦Description
+** -----¦----------¦--------------¦--------------------------------------
+** 1.0  ¦2020-06-10¦G.Slavov     ¦Initial
+**
+*************************************************************************
+*    " ------------------------------------------ "
+*    " Local Declarations..
+*    " ------------------------------------------ "
+    DATA: lt_ordim_o TYPE /scwm/tt_ordim_o.
+    DATA: lt_ordim_c TYPE /scwm/tt_ordim_c.
+    DATA: ls_obd_destination TYPE y20_s_pcon_bin_odo_dest.
+    DATA: lt_obd_destination TYPE y20_t_pcon_bin_odo_dest.
+    DATA: lt_huhdr    TYPE /scwm/tt_huhdr_int.
+    DATA: lt_hu_item  TYPE /scwm/tt_huitm_int.
+*    " ------------------------------------------ "
+*    "  Processing Logic..
+*    " ------------------------------------------ "
+
+    ls_obd_destination-lgnum = mv_lgnum.
+    ls_obd_destination-bin = iv_huident.
+    ls_obd_destination-hu = iv_huident.
+
+    read_tasks_by_huident_and_sloc(
+      EXPORTING
+        it_huident = VALUE #( ( huident = iv_huident ) )
+      IMPORTING
+        et_ordim_o = lt_ordim_o
+        et_ordim_c = lt_ordim_c ).
+
+    CALL FUNCTION '/SCWM/HU_SELECT_GEN'
+      EXPORTING
+        iv_lgnum     = mv_lgnum
+        ir_huident   = VALUE rseloption( ( sign   = wmegc_sign_inclusive
+                                           option = wmegc_option_eq
+                                           low    = iv_huident ) )
+        ir_vhi       = VALUE rseloption( ( sign   = wmegc_sign_inclusive
+                                           option = wmegc_option_eq
+                                           low    = wmegc_vhi_real ) )
+      IMPORTING
+        et_huhdr     = lt_huhdr
+        et_huitm     = lt_hu_item
+      EXCEPTIONS
+        wrong_input  = 1
+        not_possible = 2
+        OTHERS       = 3.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    DATA(lt_dlv_headers) = read_deliveries_from_huitem( lt_hu_item ).
+
+    LOOP AT lt_hu_item ASSIGNING FIELD-SYMBOL(<ls_huitm>).
+      ASSIGN lt_huhdr[ guid_hu = <ls_huitm>-guid_parent ] TO FIELD-SYMBOL(<ls_huhdr>).
+      CHECK sy-subrc = 0.
+
+      " Read task to find the destination location. Only one of the two importing tables should have entries
+      ASSIGN lt_ordim_o[ dguid_hu = <ls_huitm>-guid_parent ] TO FIELD-SYMBOL(<ls_ordim_o>).
+      ASSIGN lt_ordim_c[ dguid_hu = <ls_huitm>-guid_parent ] TO FIELD-SYMBOL(<ls_ordim_c>).
+      IF <ls_ordim_o> IS ASSIGNED.
+        ls_obd_destination-destination = <ls_ordim_o>-nlpla.
+        ls_obd_destination-dest_st_type = <ls_ordim_o>-nltyp.
+      ELSEIF <ls_ordim_c> IS ASSIGNED.
+        ls_obd_destination-destination = <ls_ordim_c>-nlpla.
+        ls_obd_destination-dest_st_type = <ls_ordim_c>-nltyp.
+      ENDIF.
+      " read delivery to get the document number
+      ASSIGN lt_dlv_headers[ docid = <ls_huitm>-qdocid ] TO FIELD-SYMBOL(<ls_dlv_head>).
+      CHECK sy-subrc = 0.
+      ls_obd_destination-docno = <ls_dlv_head>-docno.
+      APPEND ls_obd_destination TO lt_obd_destination.
+
+    ENDLOOP.
+
+    ct_obd_destinations = sort_obd_destinations( ct_obd_destinations ).
+    DELETE ADJACENT DUPLICATES FROM ct_obd_destinations.
+
+    IF lines( lt_obd_destination ) = 1.
+
+      ASSIGN lt_obd_destination[ 1 ] TO FIELD-SYMBOL(<ls_new_line>).
+      " in case the HU is scanned second time. do not add it again
+      FIND <ls_new_line>-hu IN TABLE ct_obd_destinations MATCH LINE DATA(lv_index).
+      IF lv_index = 0.
+        INSERT <ls_new_line> INTO ct_obd_destinations INDEX 1.
+      ENDIF.
+
+    ENDIF.
+
+    TRY.
+        confirm_tasks( lt_ordim_o ).
+
+      CATCH /iwbep/cx_mgw_tech_exception.
+        handle_messages( ).
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD confirm_tasks.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PCON
+* Description : Confirm tasks.
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-06-10¦G.Slavov     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA: lt_bapiret  TYPE bapirettab,
+          lv_severity TYPE bapi_mtype,
+          lt_conf     TYPE /scwm/to_conf_tt.
+    " ------------------------------------------ "
+    "  processing logic..
+    " ------------------------------------------ "
+
+    IF it_ordim IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    LOOP AT it_ordim ASSIGNING FIELD-SYMBOL(<ls_ordim>).
+
+      APPEND VALUE #( tanum = <ls_ordim>-tanum
+                      squit = abap_true
+                      nlpla = <ls_ordim>-nlpla ) TO lt_conf.
+    ENDLOOP.
+
+    CALL FUNCTION '/SCWM/TO_CONFIRM'
+      EXPORTING
+        iv_lgnum       = mv_lgnum
+        iv_update_task = abap_true
+        iv_commit_work = abap_true
+        it_conf        = lt_conf
+      IMPORTING
+        et_bapiret     = lt_bapiret
+        ev_severity    = lv_severity.
+
+    IF lv_severity CA wmegc_severity_ea.
+      LOOP AT lt_bapiret ASSIGNING FIELD-SYMBOL(<ls_bapiret>) WHERE type CA wmegc_severity_ea.
+        MESSAGE ID <ls_bapiret>-id TYPE <ls_bapiret>-type NUMBER <ls_bapiret>-number
+           WITH <ls_bapiret>-message_v1 <ls_bapiret>-message_v2 <ls_bapiret>-message_v3 <ls_bapiret>-message_v4 INTO DATA(lv_msg).
+        raise_exception( ).
+      ENDLOOP.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD handle_messages.
+    IF io_log IS SUPPLIED AND io_log IS BOUND.
+      DATA(lt_bapiret) = io_log->get_messages_from_this_log( ).
+      io_log->end_log( ).
+    ENDIF.
+    add_message_to_odata_container( lt_bapiret ).
+  ENDMETHOD.
+
+
+METHOD handle_request.
+
+  DATA: lv_lgpla TYPE /scwm/de_lgpla.
+  DATA: ls_lagp  TYPE /scwm/lagp.
+  DATA: lt_guid_hu TYPE /scwm/tt_guid_hu.
+
+  lv_lgpla = ms_entity-scan.
+
+  CALL FUNCTION '/SCWM/LAGP_READ_SINGLE'
+    EXPORTING
+      iv_lgnum      = ms_entity-lgnum
+      iv_lgpla      = lv_lgpla
+    IMPORTING
+      es_lagp       = ls_lagp
+    EXCEPTIONS
+      wrong_input   = 1
+      not_found     = 2
+      enqueue_error = 3
+      OTHERS        = 4.
+
+  CASE sy-subrc.
+    WHEN 0. " We have a bin
+      IF ls_lagp-lgtyp <>  zswl_cl_param=>read_const( iv_lgnum     = mv_lgnum
+                                                      iv_context   = zswl_if_param_c=>mc_picking
+                                                      iv_parameter = zswl_if_param_c=>mc_pcon_location ).
+
+        RETURN.
+      ENDIF.
+
+      CLEAR ms_entity. " Clear the history, when scanning a bin
+      ms_entity-scan_popuprackcoordinates = calc_bin_alerts( lv_lgpla ).
+      ms_entity-scan_bincontent           = calc_bin_content(  lv_lgpla ).
+      ms_entity-scan_binobddestinations   = calc_bin_destinations( lv_lgpla ).
+
+      TRY.
+          confirm_tasks( read_open_tasks_per_bin( lv_lgpla ) ).
+        CATCH /iwbep/cx_mgw_tech_exception.
+          handle_messages( ).
+          RETURN.
+      ENDTRY.
+
+    WHEN 1 OR 2.
+      " Check if input is a pick HU?
+      CALL FUNCTION '/SCWM/HU_SELECT_GEN'
+        EXPORTING
+          iv_lgnum     = mv_lgnum
+          ir_huident   = VALUE rseloption( ( sign   = wmegc_sign_inclusive
+                                             option = wmegc_option_eq
+                                             low    = lv_lgpla ) )
+        IMPORTING
+          et_guid_hu   = lt_guid_hu
+        EXCEPTIONS
+          wrong_input  = 1
+          not_possible = 2
+          error        = 3
+          OTHERS       = 4.
+
+      IF sy-subrc <> 0 OR lt_guid_hu IS INITIAL.
+        " Dont know what to do with this input
+        RETURN.
+      ENDIF.
+
+      calc_pick_hu_destinations( EXPORTING iv_huident = |{ lv_lgpla ALPHA = IN }|
+                                 CHANGING ct_obd_destinations = ms_entity-scan_binobddestinations ).
+
+    WHEN 3 OR 4.
+
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO DATA(lv_msg).
+      add_message_to_odata_container( ).
+      RETURN.
+
+  ENDCASE.
+
+  rv_success = abap_true.
+
+
+ENDMETHOD.
+
+
+  METHOD raise_exception.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PCON
+* Description : Raise Exception with last message
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-06-12¦G.Slavov      ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    "  mo_log->add_message( ).
+    RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception(
+        textid = VALUE #( msgno = sy-msgno
+                          msgid = sy-msgid
+                          attr1 = sy-msgv1
+                          attr2 = sy-msgv2
+                          attr3 = sy-msgv3
+                          attr4 = sy-msgv4 ) ).
+  ENDMETHOD.
+
+
+  METHOD read_deliveries_from_huitem.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PCON
+* Description : Read Delivery header data for handling units
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-06-11¦G.Slavov     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA: lt_docid TYPE /scwm/dlv_docid_item_tab.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    LOOP AT it_huitem ASSIGNING FIELD-SYMBOL(<ls_huitem>).
+      APPEND VALUE #( docid  = <ls_huitem>-qdocid
+                      itemid = <ls_huitem>-qitmid
+                      doccat = <ls_huitem>-doccat ) TO lt_docid.
+    ENDLOOP.
+
+    IF lines( lt_docid ) = 0.
+      RETURN.
+    ENDIF.
+
+    DATA(lo_dlv) = /scwm/cl_dlv_management_prd=>get_instance( ).
+    DATA(ls_read_options) = VALUE /scwm/dlv_query_contr_str( data_retrival_only = abap_true ).
+    TRY.
+        lo_dlv->query(
+          EXPORTING
+            it_docid        = lt_docid
+            is_read_options = ls_read_options
+          IMPORTING
+            et_headers      = rt_headers ).
+        ##NO_HANDLER
+      CATCH /scdl/cx_delivery.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD read_deliveries_from_tasks.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PCON
+* Description : Read Delivery header data for handling units
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-06-08¦G.Slavov     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA: lt_docid TYPE /scwm/dlv_docid_item_tab.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    LOOP AT it_ordim_o ASSIGNING FIELD-SYMBOL(<ls_ordim_o>).
+
+      IF <ls_ordim_o>-qdocid IS NOT INITIAL.
+        DATA(lv_docid) = <ls_ordim_o>-qdocid.
+      ELSEIF <ls_ordim_o>-rdocid IS NOT INITIAL.
+        lv_docid = <ls_ordim_o>-rdocid.
+      ENDIF.
+
+      IF <ls_ordim_o>-qitmid IS NOT INITIAL.
+        DATA(lv_itemid) = <ls_ordim_o>-qitmid.
+      ELSEIF <ls_ordim_o>-ritmid IS NOT INITIAL.
+        lv_itemid = <ls_ordim_o>-ritmid.
+      ENDIF.
+
+      IF lv_docid IS NOT INITIAL AND lv_itemid IS NOT INITIAL.
+
+        APPEND VALUE #( docid  = lv_docid
+                        itemid = lv_itemid
+                        doccat = <ls_ordim_o>-doccat ) TO lt_docid.
+
+        CLEAR: lv_docid, lv_itemid.
+
+      ELSE.
+        SELECT SINGLE docid FROM /scwm/huref WHERE guid_hu = @<ls_ordim_o>-dguid_hu INTO @lv_docid.
+
+        APPEND VALUE #( docid  = lv_docid
+                        doccat = <ls_ordim_o>-doccat ) TO lt_docid.
+
+        CLEAR: lv_docid, lv_itemid.
+
+      ENDIF.
+
+    ENDLOOP.
+
+    IF lines( lt_docid ) = 0.
+      RETURN.
+    ENDIF.
+
+    DATA(lo_dlv) = /scwm/cl_dlv_management_prd=>get_instance( ).
+    DATA(ls_read_options) = VALUE /scwm/dlv_query_contr_str( data_retrival_only = abap_true ).
+    TRY.
+        lo_dlv->query(
+          EXPORTING
+            it_docid        = lt_docid
+            is_read_options = ls_read_options
+          IMPORTING
+            et_headers      = rt_headers ).
+        ##NO_HANDLER
+      CATCH /scdl/cx_delivery.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD read_open_tasks_per_bin.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PCON
+* Description : Confirm tasks.
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-06-10¦G.Slavov     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    CALL FUNCTION '/SCWM/TO_READ_SRC'
+      EXPORTING
+        iv_lgnum     = mv_lgnum
+        iv_lgpla     = iv_lgpla
+      IMPORTING
+        et_ordim_o   = rt_data
+      EXCEPTIONS
+        wrong_input  = 1
+        not_found    = 2
+        foreign_lock = 3
+        OTHERS       = 4.
+
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO DATA(lv_msg).
+      add_message_to_odata_container( ).
+      RETURN.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD read_rack_coordinates_of_dlv.
+*************************************************************************
+** Company     : Swisslog AG
+** Package     : Y20_UI_UI5_PCON
+** Description : Set output data. Map data to display fields, sort output
+**                 info grouped by destination storage type
+*************************************************************************
+** REVISIONS:
+** ---------
+**
+** Ver. ¦Date      ¦Author        ¦Description
+** -----¦----------¦--------------¦--------------------------------------
+** 1.0  ¦2020-06-10¦G.Slavov     ¦Initial
+**
+*************************************************************************
+*    " ------------------------------------------ "
+*    " Local Declarations..
+*    " ------------------------------------------ "
+    DATA: lt_huhdr TYPE /scwm/tt_huhdr_int.
+    DATA: lt_hus   TYPE /scwm/tt_guid_hu.
+    DATA: lt_ordim_o TYPE /scwm/tt_ordim_o.
+    DATA: lt_docid TYPE /scwm/tt_docid.
+    DATA: ls_docid TYPE /scwm/s_docid.
+*    " ------------------------------------------ "
+*    "  Processing Logic..
+*    " ------------------------------------------ "
+
+    CLEAR rt_result.
+
+    " Alternative - use /SCWM/DLV_GET_HUS_FOR_DELIVERY, as the code above does not return the HUs tasks
+    ls_docid-docid = iv_delivery_id.
+    APPEND ls_docid TO lt_docid.
+
+    CALL FUNCTION '/SCWM/DLV_GET_HUS_FOR_DELIVERY'
+      EXPORTING
+        iv_doccat = /scdl/if_dl_doc_c=>sc_doccat_out_prd
+        it_docid  = VALUE /scwm/tt_docid( ( docid = iv_delivery_id ) )
+        iv_lgnum  = mv_lgnum
+      IMPORTING
+        et_huhdr  = lt_huhdr
+      EXCEPTIONS
+        error     = 1
+        OTHERS    = 2.
+
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO DATA(lv_msg).
+      add_message_to_odata_container( ).
+      RETURN.
+    ENDIF.
+
+    lt_hus = CORRESPONDING #( lt_huhdr ).
+
+    CALL FUNCTION '/SCWM/READ_TO_INT_DB'
+      EXPORTING
+        it_hus     = lt_hus
+        iv_lgnum   = mv_lgnum
+      IMPORTING
+        et_ordim_o = lt_ordim_o.
+
+    DELETE lt_ordim_o WHERE vltyp <> zswl_cl_param=>read_const( iv_lgnum     = mv_lgnum
+                                                                iv_context   = zswl_if_param_c=>mc_picking
+                                                                iv_parameter = zswl_if_param_c=>mc_pcon_location ).
+
+    rt_result = CORRESPONDING #( lt_ordim_o ).
+    SORT rt_result.
+    DELETE ADJACENT DUPLICATES FROM rt_result.
+
+  ENDMETHOD.
+
+
+  METHOD read_tasks_by_huident_and_sloc.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PCON
+* Description : Read Tasks for HU
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-06-17¦G.Slavov     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA: ls_selcrit TYPE /scwm/s_to_selcrit_mon,
+          lt_tanum   TYPE /scwm/t_tanum,
+          lt_ordim_c TYPE /scwm/tt_ordim_c,
+          lt_ordim_o TYPE /scwm/tt_ordim_o.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+
+    ls_selcrit = VALUE #( r_nlenr = VALUE #( FOR <ls_hui> IN it_huident
+                                             ( sign   = wmegc_sign_inclusive
+                                               option = wmegc_option_eq
+                                               low    = <ls_hui>-huident ) )
+                          r_trart = VALUE #( ( sign   = wmegc_sign_inclusive
+                                               option = wmegc_option_eq
+                                               low    = wmegc_trart_pick ) )
+                          r_vltyp = VALUE #( ( sign   = wmegc_sign_inclusive
+                                               option = wmegc_option_eq
+                                               low    = zswl_cl_param=>read_const( iv_lgnum     = mv_lgnum
+                                                                                    iv_context   = zswl_if_param_c=>mc_picking
+                                                                                    iv_parameter = zswl_if_param_c=>mc_pcon_location ) ) )
+                          r_tostat = VALUE #( ( sign   = wmegc_sign_inclusive
+                                                option = wmegc_option_eq
+                                                low    = wmegc_to_open )
+                                              ( sign   = wmegc_sign_inclusive
+                                                option = wmegc_option_eq
+                                                low    = wmegc_to_inactiv )
+                                              ( sign   = wmegc_sign_inclusive
+                                                option = wmegc_option_eq
+                                                low    = wmegc_to_confirmed ) ) ).
+    " read tasks number
+    CALL FUNCTION '/SCWM/TO_GET_WIP'
+      EXPORTING
+        iv_lgnum   = mv_lgnum
+        iv_open    = abap_true
+        iv_conf    = abap_true
+        is_selcrit = ls_selcrit
+      IMPORTING
+        et_tanum   = lt_tanum.
+
+    IF lt_tanum IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " read tasks data
+    CALL FUNCTION '/SCWM/TO_READ_MULT'
+      EXPORTING
+        iv_lgnum    = mv_lgnum
+        ir_tanum    = VALUE rseloption( FOR <ls_task> IN lt_tanum ( sign   = wmegc_sign_inclusive
+                                                                    option = wmegc_option_eq
+                                                                    low    = <ls_task>-tanum ) )
+      IMPORTING
+        et_ordim_o  = lt_ordim_o
+        et_ordim_c  = lt_ordim_c
+      EXCEPTIONS
+        wrong_input = 1
+        not_found   = 2
+        OTHERS      = 3.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO DATA(lv_msg).
+      raise_exception( ).
+    ENDIF.
+
+    DELETE lt_ordim_o WHERE vltyp <> zswl_cl_param=>read_const( iv_lgnum     = mv_lgnum
+                                                                iv_context   = zswl_if_param_c=>mc_picking
+                                                                iv_parameter = zswl_if_param_c=>mc_pcon_location ).
+
+    DELETE lt_ordim_c WHERE vltyp <> zswl_cl_param=>read_const( iv_lgnum     = mv_lgnum
+                                                                iv_context   = zswl_if_param_c=>mc_picking
+                                                                iv_parameter = zswl_if_param_c=>mc_pcon_location ).
+
+    IF lines( lt_ordim_o ) = 0 AND lines( lt_ordim_c ) = 0.
+      MESSAGE e042(y20_ui5) WITH it_huident[ 1 ]-huident INTO lv_msg.
+      raise_exception( ).
+    ENDIF.
+
+    et_ordim_o = lt_ordim_o.
+    et_ordim_c = lt_ordim_c.
+  ENDMETHOD.
+
+
+  METHOD sort_obd_destinations.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PCON
+* Description : Sort display data grouped by destination storage type
+*               Storage types are maintained in the parameter framework
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-06-10¦G.Slavov     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA lt_temp_group TYPE y20_t_pcon_bin_odo_dest.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF lines( it_data ) = 0.
+      RETURN.
+    ENDIF.
+
+    DATA(lt_param) = zswl_cl_param=>read_const_list(
+                                                      iv_lgnum     = mv_lgnum
+                                                      iv_context   = zswl_if_param_c=>mc_picking
+                                                      iv_parameter = zswl_if_param_c=>mc_pcon_sort_lgtyp ).
+
+    LOOP AT lt_param ASSIGNING FIELD-SYMBOL(<ls_nlgyp>).
+
+      CLEAR: lt_temp_group.
+      LOOP AT it_data ASSIGNING FIELD-SYMBOL(<ls_data>) WHERE dest_st_type = <ls_nlgyp>.
+        APPEND <ls_data> TO lt_temp_group.
+      ENDLOOP.
+
+      CHECK lines( lt_temp_group ) > 0.
+
+      SORT lt_temp_group BY docno ASCENDING hu ASCENDING.
+      APPEND LINES OF lt_temp_group TO rt_data.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD validate_and_set_lgnum.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PCON
+* Description : Get LGNUM from key and set it to the object
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-06-09¦G.Slavov    ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA: ls_t300  TYPE /scwm/s_t300.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    " check lgnum
+    CALL FUNCTION '/SCWM/T300_READ_SINGLE'
+      EXPORTING
+        iv_lgnum  = iv_lgnum
+      IMPORTING
+        es_t300   = ls_t300
+      EXCEPTIONS
+        not_found = 1
+        OTHERS    = 2.
+
+    IF sy-subrc <> 0 OR
+       ls_t300-lgnum IS INITIAL.
+      MESSAGE e011(/scwm/ccheck) INTO DATA(lv_msg_dummy).
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+    ELSE.
+      mv_lgnum  = ls_t300-lgnum.
+    ENDIF.
+
+  ENDMETHOD.
+ENDCLASS.

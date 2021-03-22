@@ -1,0 +1,47 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout" xmlns:table="sap.ui.table">
+	<VBox height="17rem">
+			<table:Table cellClick="onCellClick" id="tblDeliveryCountedContent" selectionBehavior="RowOnly" noData="keine Daten" rowActionCount="1" rowSelectionChange="onSelect" visibleRowCount="5"
+				selectionMode="Single" rows="{uiTableModelCounted>/items}"  enableColumnReordering="false" width="auto" enableCellFilter="true" sort="sortTable">
+					<table:rowSettingsTemplate>
+						<table:RowSettings highlight="{  
+									path: 'uiTableModelCounted>Result',
+									formatter: '.formatter.setHighlight'}" />
+					</table:rowSettingsTemplate>
+				<table:columns >
+					<table:Column >
+						<Label text="{i18n>Table2_Col1}" class="customTableHeaderSmall"/>
+						<table:template class="customTableRowBackgroundOK">
+							<Text text="{uiTableModelCounted>Itemno}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="Product/MATNR">
+						<Label text="{i18n>Table2_Col2}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{uiTableModelCounted>Product/MATNR}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="TaskCount">
+						<Label text="{i18n>Table2_Col3}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{uiTableModelCounted>TaskCount}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column>
+						<Label text="{i18n>Table2_Col4}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{uiTableModelCounted>QtyCounted/Quan}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column>
+						<Label text="{i18n>Table2_Col5}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{  
+									path: 'uiTableModelCounted>Result',
+									formatter: '.formatter.setResult'}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+				</table:columns>
+			</table:Table>
+	</VBox>
+
+</core:FragmentDefinition>

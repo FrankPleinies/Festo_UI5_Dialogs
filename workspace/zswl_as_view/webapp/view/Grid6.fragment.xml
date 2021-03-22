@@ -1,0 +1,52 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout" xmlns:table="sap.ui.table">
+	<VBox height="17rem">
+		<VBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Prod_No}" class="customTextSmall"/>
+					<Text text="{selectedCompContent>/Product/MATNR}" class="customTextLarge"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Prod_Text}" wrapping="false" class="customTextSmall"/>
+					<Text text="{  path: 'selectedCompContent>/Product/MAKTX',
+								formatter: '.formatter.longTextFormatter'
+							 }" wrapping="false" class="customTextMedium"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text class="customTextSmall" text="{i18n>Form_Prod_Quan}"/>
+					<Text class="customTextLarge" text="{= ${selectedCompContent>/Quant/Quan}*1} {selectedCompContent>/Quant/Unit}"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text class="customTextSmall" text="{i18n>Form_Prod_AvailQuan}"/>
+					<Text class="customTextLarge" text="{= ${selectedCompContent>/AvailQty/Quan}*1} {selectedCompContent>/AvailQty/Unit}"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Prod_Cat}" class="customTextSmall"/>
+					<Text text="{selectedCompContent>/StockType}" class="customTextLarge"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Prod_ExpDate}" class="customTextSmall"/>
+					<Text text="{selectedCompContent>/ExpiryDate}" class="customTextLarge"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Prod_ExpDateCnt}" class="customTextSmall"/>
+					<Text text="{selectedCompContent>/ExpiryExtCnt}" class="customTextLarge"/>
+				</items>
+			</FlexBox>
+
+		</VBox>
+	</VBox>
+
+</core:FragmentDefinition>

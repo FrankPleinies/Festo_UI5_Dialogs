@@ -1,0 +1,59 @@
+<mvc:View controllerName="com.swl.Y20_PTWY_TROLL.controller.Main" xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout" xmlns:table="sap.ui.table"
+	xmlns:form="sap.ui.layout.form" xmlns="sap.m" displayBlock="true">
+	<!-- <Shell id="shell"> -->
+		<App id="app">
+			<pages>
+				<Page id="page" title="{i18n>dialog_title}" showFooter="true"
+					class="sapUiResponsivePadding--header sapUiResponsivePadding--subHeader sapUiResponsivePadding--footer customContentLayout customHeader">
+					<headerContent>
+						<Image src="/img/Festo_Logo.png" width="100px"/>
+					</headerContent>
+					<content>
+						<l:BlockLayout id="BlockLayout" background="Dashboard">
+							<!-- first row -->
+							<l:BlockLayoutRow accentCells="Accent1">
+								<!-- first cell-->
+								<l:BlockLayoutCell class="smallPaddingCustom customTopBorder customCellHeader" id="Accent1" width="1" title="{i18n>Grid1_Title} 3213213">
+									<core:Fragment xmlns:core="sap.ui.core" fragmentName="com.swl.Y20_PTWY_TROLL.view.Grid1" type="XML"/>
+								</l:BlockLayoutCell>
+								<!-- second cell-->
+								<l:BlockLayoutCell class="smallPaddingCustom customTopBorder customCellHeader" title="{i18n>Grid2_Title} RND 12-01-08-3/2">
+									<core:Fragment xmlns:core="sap.ui.core" fragmentName="com.swl.Y20_PTWY_TROLL.view.Grid2" type="XML"/>
+								</l:BlockLayoutCell>
+								<!-- third cell-->
+								<l:BlockLayoutCell class="smallPaddingCustom customCellHeader" title="{i18n>Grid3_Title} 457688">
+									<core:Fragment xmlns:core="sap.ui.core" fragmentName="com.swl.Y20_PTWY_TROLL.view.Grid3" type="XML"/>
+								</l:BlockLayoutCell>
+							</l:BlockLayoutRow>
+							<!-- second row -->
+							<l:BlockLayoutRow>
+								<!-- forth cell-->
+								<l:BlockLayoutCell class="smallPaddingCustom customButtomBorder">
+									<core:Fragment xmlns:core="sap.ui.core" fragmentName="com.swl.Y20_PTWY_TROLL.view.Grid4" type="XML"/>
+								</l:BlockLayoutCell>
+								<!-- fifth cell-->
+								<l:BlockLayoutCell class="smallPaddingCustom customButtomBorder">
+									<core:Fragment xmlns:core="sap.ui.core" fragmentName="com.swl.Y20_PTWY_TROLL.view.Grid5" type="XML"/>
+								</l:BlockLayoutCell>
+								<!-- sixth cell-->
+								<l:BlockLayoutCell class="smallPaddingCustom customCellHeader" title="{i18n>Grid6_Title} 301339">
+									<core:Fragment xmlns:core="sap.ui.core" fragmentName="com.swl.Y20_PTWY_TROLL.view.Grid6" type="XML"/>
+								</l:BlockLayoutCell>
+							</l:BlockLayoutRow>
+						</l:BlockLayout>
+
+					</content>
+					<footer>
+						<OverflowToolbar height="70px">
+							<Button icon="sap-icon://arrow-top" text="Exit" class="customFooterButton"/>
+							<HBox width="85%" id="hbox1" justifyContent="Center" alignItems="Stretch" alignContent="Stretch" class="sapUiSmallMarginEnd"/>
+							<Button icon="sap-icon://alert" text="{= ${message>/}.length }" visible="true" class="sapUiSmallMarginEnd customFooterButton"
+								press="onMessagePopoverPress"/>
+						</OverflowToolbar>
+					</footer>
+
+				</Page>
+			</pages>
+		</App>
+	<!-- </Shell> -->
+</mvc:View>

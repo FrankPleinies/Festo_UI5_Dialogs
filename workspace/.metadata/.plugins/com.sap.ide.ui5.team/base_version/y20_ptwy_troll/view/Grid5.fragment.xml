@@ -1,0 +1,21 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout">
+	<VBox height="15rem">
+		<VBox>
+			<FlexBox class="sapUiMediumMarginTop" justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_ScanDest}" class="sapUiSmallMarginTop customTextMedium"/>
+					<Input value="" id="scanDest" submit="onScanDest" width="100%" class="customInput"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="Center" alignItems="End">
+				<items>
+					<Button text="{i18n>BtnChgDst}" enabled="{ELEMENTS>/btn_chgDst/enabled}" visible="{ELEMENTS>/btn_chgDst/visible}" class="sapUiSmallMargin customButton"
+						id="btn_chgDst" press="onChgDst"/>
+				</items>
+			</FlexBox>
+		</VBox>
+		<VBox>
+		</VBox>
+	</VBox>
+
+</core:FragmentDefinition>

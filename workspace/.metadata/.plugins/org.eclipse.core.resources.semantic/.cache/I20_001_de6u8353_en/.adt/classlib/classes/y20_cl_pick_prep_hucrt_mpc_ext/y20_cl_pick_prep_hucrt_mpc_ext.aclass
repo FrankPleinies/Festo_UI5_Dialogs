@@ -1,0 +1,36 @@
+CLASS y20_cl_pick_prep_hucrt_mpc_ext DEFINITION
+  PUBLIC
+  INHERITING FROM y20_cl_pick_prep_hucrt_mpc
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    CONSTANTS mc_log_extnumber TYPE string VALUE 'Outbound: Pick Preparation - HU Create' ##NO_TEXT.
+    TYPES:
+      "!<p class="shorttext synchronized">Service request keys</p>
+      BEGIN OF tys_entity_keys,
+        lgnum  TYPE /scwm/lgnum,
+        scanhu TYPE /scwm/de_huident,
+        aarea  TYPE /scwm/de_aarea,
+      END OF tys_entity_keys.
+
+    CONSTANTS:
+      BEGIN OF ms_field_name,
+        lgnum TYPE string VALUE 'Lgnum',
+        scan  TYPE string VALUE 'Scan',
+        aarea  TYPE string VALUE 'ActivArea',
+      END OF ms_field_name.
+    CONSTANTS: BEGIN OF ms_method_key,
+                 hutypelist        TYPE string VALUE 'HUTYPELIST',
+                 filter_hutypelist TYPE string VALUE 'FILTER_HUTYPELIST',
+                 crete_newhus      TYPE string VALUE 'CRETE_NEWHUS',
+                 Active_Trolley    TYPE string VALUE 'ACTIVE_TROLLEY',
+               END OF ms_method_key.
+
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+ENDCLASS.
+
+
+
+CLASS y20_cl_pick_prep_hucrt_mpc_ext IMPLEMENTATION.
+ENDCLASS.

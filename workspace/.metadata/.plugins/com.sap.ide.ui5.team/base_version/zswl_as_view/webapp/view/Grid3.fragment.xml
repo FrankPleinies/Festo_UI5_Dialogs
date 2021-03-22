@@ -1,0 +1,52 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout" xmlns:table="sap.ui.table">
+	<VBox height="25rem">
+		<VBox height="75%">
+			<table:Table cellClick="onCellClick" id="tblBinContent" selectionBehavior="RowOnly" noData="keine Daten" rowActionCount="1" rowSelectionChange="onTableRowChange" visibleRowCount="5"
+				selectionMode="Single" rows="{BinContent>/results}"  enableColumnReordering="false" width="auto" >
+				<table:columns >
+					<table:Column >
+						<Label text="{i18n>Table2_Col1}" class="customTableHeaderSmall"/>
+						<table:template class="customTableRowBackgroundOK">
+							<Text text="{BinContent>Compartment}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="Product/MATNR">
+						<Label text="{i18n>Table2_Col2}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{BinContent>Product/MATNR}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="TaskCount">
+						<Label text="{i18n>Table2_Col3}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{BinContent>Product/MAKTX}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column>
+						<Label text="{i18n>Table2_Col4}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{BinContent>Quant/Quan}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column>
+						<Label text="{i18n>Table2_Col5}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{BinContent>Quant/Unit}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+				</table:columns>
+			</table:Table>
+		</VBox>
+		<VBox height="25%">
+		<FlexBox justifyContent="Center" alignItems="Center" class="sapUiMediumMarginTop">
+			<items>
+				<Button text="{i18n>Btn_Block}" enabled="{ELEMENTS>/btn_block/enabled}" visible="{ELEMENTS>/btn_block/visible}" id="btn_block" press="onPressBlock" class="sapUiSmallMargin customButton"/>
+				<Button text="{i18n>Btn_ExpExt}"  enabled="{ELEMENTS>/btn_expext/enabled}" visible="{ELEMENTS>/btn_expext/visible}"   id="btn_expext"  press="onPressExpireExtend" class="sapUiSmallMargin customButton"  />
+				<Button text="{i18n>Btn_Deviation}"  enabled="{ELEMENTS>/btn_deviation/enabled}" visible="{ELEMENTS>/btn_deviation/visible}"   id="btn_deviation"  press="onDeviationPressed" class="sapUiSmallMargin customButton" />
+			</items>
+		</FlexBox>
+		</VBox>
+
+	</VBox>
+
+</core:FragmentDefinition>

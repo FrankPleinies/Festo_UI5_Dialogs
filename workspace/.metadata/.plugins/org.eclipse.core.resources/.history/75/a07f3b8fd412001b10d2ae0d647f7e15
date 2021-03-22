@@ -1,0 +1,64 @@
+<core:FragmentDefinition xmlns="sap.m"
+    xmlns:l="sap.ui.layout"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:core="sap.ui.core">
+    <Dialog title="Pick Complete: Drop-off" id="popupDialogDropOff" class="sapUiSizeCozy sapUiContentPadding" afterOpen="afterOpenDropOff">
+
+        <f:Form id="dialogDropOffForm" editable="true">
+            <f:title>
+                <core:Title icon="sap-icon://message-popup" text="Picking for Resoruce completed. 
+                  Ready to send to the destination." />
+            </f:title>
+            <f:layout>
+                <f:ResponsiveGridLayout labelSpanXL="3" labelSpanL="3" labelSpanM="3" labelSpanS="12" adjustLabelSpan="false" emptySpanXL="4" emptySpanL="4" emptySpanM="4" emptySpanS="0" columnsXL="1" columnsL="1" columnsM="1" singleContainerFullSize="false" />
+            </f:layout>
+            <f:formContainers>
+                <f:FormContainer>
+                    <f:formElements>
+                        <f:FormElement>
+                            <List class="sapUiMediumMarginBottom customListBorder" showSeparators="None">
+                                <headerToolbar>
+                                    <OverflowToolbar>
+                                        <content>
+                                            <Title text="Resource"/>
+                                            <ToolbarSpacer />
+                                            <Title text="{modelDropOff>/Trolley}"/>
+                                        </content>
+                                    </OverflowToolbar>
+                                </headerToolbar>
+                                <items>
+                                    <StandardListItem title="Destination" info="{modelDropOff>/Nltyp}" />
+                                    <StandardListItem title="StorageSection" info="{modelDropOff>/Nlber}"/>
+                                    <StandardListItem title="StorageBin" info="{modelDropOff>/Nlpla}"/>
+                                </items>
+                            </List>
+                        </f:FormElement>
+                        <f:FormElement>
+                            <List class="customListBorder" showSeparators="None">
+                                <headerToolbar>
+                                    <OverflowToolbar>
+                                        <content>
+                                            <Title text="Scan Destination"/>
+                                        </content>
+                                    </OverflowToolbar>
+                                </headerToolbar>
+                                <items>
+                                    <InputListItem>
+                                        <Input id="scanPopupDropOffInput" />
+                                    </InputListItem>
+                                    <InputListItem/>
+                                    <InputListItem/>
+                                </items>
+                            </List>
+                        </f:FormElement>
+                    </f:formElements>
+
+                </f:FormContainer>
+            </f:formContainers>
+        </f:Form>
+
+        <buttons>
+            <Button text="Confirm" press="onConfirmDropOffDialog" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

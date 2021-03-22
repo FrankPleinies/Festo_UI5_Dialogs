@@ -1,0 +1,103 @@
+<mvc:View xmlns:core="sap.ui.core"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:l="sap.ui.layout"
+	xmlns:table="sap.ui.table"
+	xmlns:form="sap.ui.layout.form"
+	xmlns="sap.m" controllerName="y20_deco_inb_r.controller.MainScreen" displayBlock="true">
+
+	<App id="app">
+		<pages>
+			<Page id="page" title="{i18n>inboundDeco}" showFooter="true" class="sapUiResponsivePadding--header sapUiResponsivePadding--subHeader sapUiResponsivePadding--footer customContentLayout customHeader">
+				<headerContent>
+					<FlexBox height="100%" alignItems="Center">
+  						<Text id="user" class="headerUser"/>
+<!-- 						<Image src="./images/swllogo.png" width="100px"/> -->
+						<Image src="./images/festologo.png" width="100px"/>
+					</FlexBox>
+				</headerContent>
+				<content>
+
+					<l:BlockLayout id="BlockLayout" background="Dashboard">
+						<!-- first row -->
+
+						<l:BlockLayoutRow accentCells="Accent1">
+							<!-- first cell-->
+							<!-- first cell-->
+							<!-- first cell-->
+							<!-- first cell-->
+							<!-- first cell-->
+							<!-- first cell title="{i18n>sapIBD}: {=${modelDocHeadNav>/DocCat}===null ? '-' : ${modelDocHeadNav>/DocCat}}" -->
+							<l:BlockLayoutCell class="smallPaddingCustom customCellHeader" id="blockLayoutCellFirst" width="1" title="{i18n>sapIBD}">
+								<core:Fragment xmlns:core="sap.ui.core" fragmentName="y20_deco_inb_r.view.BlockLayoutCellFirstContent" type="XML"/>
+							</l:BlockLayoutCell>
+							<!-- second cell-->
+							<!-- second cell-->
+							<!-- second cell-->
+							<!-- second cell-->
+							<!-- second cell-->
+							<!-- second cell-->
+							<!-- second cell-->
+							<l:BlockLayoutCell class="smallPaddingCustom customTopBorder customCellHeader" title="{i18n>lineItem}">
+								<core:Fragment xmlns:core="sap.ui.core" fragmentName="y20_deco_inb_r.view.BlockLayoutCellSecondContent" type="XML"/>
+							</l:BlockLayoutCell>
+							<!-- third cell-->
+							<!-- third cell-->
+							<!-- third cell-->
+							<!-- third cell-->
+							<!-- third cell-->
+							<!-- third cell-->
+							<!-- third cell-->
+							<l:BlockLayoutCell class="smallPaddingCustom customCellHeader" title="{i18n>createdHUs}">
+								<core:Fragment xmlns:core="sap.ui.core" fragmentName="y20_deco_inb_r.view.BlockLayoutCellThirdContent" type="XML"/>
+
+							</l:BlockLayoutCell>
+						</l:BlockLayoutRow>
+						<!-- second row -->
+						<l:BlockLayoutRow>
+							<!-- forth cell-->
+							<!-- forth cell-->
+							<!-- forth cell-->
+							<!-- forth cell-->
+							<!-- forth cell-->
+							<!-- forth cell-->
+							<l:BlockLayoutCell class="smallPaddingCustom customCellHeader" width="1">
+								<core:Fragment xmlns:core="sap.ui.core" fragmentName="y20_deco_inb_r.view.BlockLayoutCellForthContent" type="XML"/>
+							</l:BlockLayoutCell>
+							<!-- fifth cell-->
+							<!-- fifth cell-->
+							<!-- fifth cell-->
+							<!-- fifth cell-->
+							<!-- fifth cell-->
+							<!-- fifth cell-->
+							<!-- fifth cell-->
+							<l:BlockLayoutCell class="smallPaddingCustom customButtomBorder customCellHeader">
+								<core:Fragment xmlns:core="sap.ui.core" fragmentName="y20_deco_inb_r.view.BlockLayoutCellFifthContent" type="XML"/>
+
+							</l:BlockLayoutCell>
+							<!-- sixth cell-->
+							<!-- sixth cell-->
+							<!-- sixth cell-->
+							<!-- sixth cell-->
+							<!-- sixth cell-->
+							<!-- sixth cell-->
+							<l:BlockLayoutCell class="smallPaddingCustom customCellHeader" title="{i18n>avalableTrolleys}">
+								<core:Fragment xmlns:core="sap.ui.core" fragmentName="y20_deco_inb_r.view.BlockLayoutCellSixthContent" type="XML"/>
+
+							</l:BlockLayoutCell>
+						</l:BlockLayoutRow>
+
+					</l:BlockLayout>
+
+				</content>
+				<footer height="20%">
+					<OverflowToolbar height="70px">
+						<mvc:XMLView id="messagesView" viewName="y20_deco_inb_r.view.Messages"/>
+					</OverflowToolbar>
+				</footer>
+
+
+			</Page>
+		</pages>
+	</App>
+
+</mvc:View>

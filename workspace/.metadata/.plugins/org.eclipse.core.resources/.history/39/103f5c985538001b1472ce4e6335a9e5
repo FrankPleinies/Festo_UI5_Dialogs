@@ -1,0 +1,29 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:table="sap.ui.table">
+	<Dialog title="{i18n>ConfTrolleyDialogTitle}" id="confDialog" class="sapUiContentPadding">
+    <VBox>
+ 			<MessageStrip class="sapUiTinyMarginBottom sapUiSmallMarginBegin" text="{i18n>ConfTrolleyText}" type="Warning" showIcon="true"></MessageStrip>           
+			<table:Table cellClick="onCellClick" id="tblTrolleyConfContent" selectionBehavior="RowOnly" noData="keine Daten" visibleRowCount="5"
+				selectionMode="Single" rows="{confTableModel>/items}"  enableColumnReordering="false" width="auto" enableCellFilter="true">
+				<table:columns>
+					<table:Column>
+						<Label text="{i18n>ConfTable_Col1}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{confTableModel>Trolley}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column>
+						<Label text="{i18n>ConfTable_Col2}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{confTableModel>HUCount}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+				</table:columns>
+			</table:Table>
+		</VBox>
+        <buttons>
+            <Button text="Confirm" press="onConfirmConfDialog" />
+            <Button text="Close" press="onCloseConfDialog" />
+        </buttons>
+
+    </Dialog>
+	</core:FragmentDefinition>

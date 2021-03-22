@@ -1,0 +1,313 @@
+/******************************************/
+/* BlockLayout border       			  */
+/******************************************/
+.sapUiBlockLayoutSizeM:not(.sapUiBlockLayoutKeepFontSize) .smallPaddingCustom .sapUiBlockCellContent,
+.sapUiBlockLayoutSizeL:not(.sapUiBlockLayoutKeepFontSize) .smallPaddingCustom .sapUiBlockCellContent,
+.sapUiBlockLayoutSizeXL:not(.sapUiBlockLayoutKeepFontSize) .smallPaddingCustom .sapUiBlockCellContent,
+.sapUiBlockLayoutSizeS:not(.sapUiBlockLayoutKeepFontSize) .smallPaddingCustom .sapUiBlockCellContent {
+    padding: 7.5px
+}
+
+.customTopBorder .sapUiBlockCellContent {
+    margin-bottom: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0
+}
+
+.customButtomBorder .sapUiBlockCellContent {
+    margin-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+/******************************************/
+/* App title style                        */
+/******************************************/
+.customCellHeader > div > h2 {
+    font-weight: bold;
+    background-color: #D0D6DC;
+    padding-left: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.sapMBarMiddle {
+    text-align: left;
+}
+
+.sapMBarRight {
+    padding-right: 1rem;
+}
+
+.headerUser {
+    padding-right: 0.5rem;
+}
+
+/******************************************/
+/* BlockLayout Background      			  */
+/******************************************/
+.customContentLayout {
+	background-color: #717D86;
+}
+
+.customHeader .sapMIBar-CTX .sapMTitle {
+	font-size: 1.8rem;
+    font-weight: bold;
+    padding-left: 0ex;
+}
+
+/* StandardInputField Style  when focused*/
+.sapMInputBaseInner:focus {
+background-color: #C8E6FA;/*#99CCFF -> soft blue; */
+}
+.customInput .sapMInputBaseInner {
+    font-size: 2em !important;
+}
+
+/******************************************/
+/* Button style for Tablet/Phone size     */
+/******************************************/
+.sapUiSizeCozy .customButton .sapMBtnContent  {
+     font-size: 1.3em;
+}
+.sapUiSizeCozy .customButton .sapMBtnInner  {
+    background-color: #0e9ce8;
+    color: white;
+}
+.sapUiSizeCozy .customButton .sapMToggleBtnPressed  {
+    background-color: #085caf;
+    color: white;
+}
+
+.sapUiSizeCozy .customFooterButton .sapMBtnContent  {
+    font-size: 1.3em;
+}
+
+/******************************************/
+/* Button style for Desktop size          */
+/******************************************/
+.sapUiSizeCompact .customButton .sapMBtnContent  {
+    height: 50px !important;
+    font-size: 1.7em;
+    padding-top: 0.5em;
+    
+}
+.sapUiSizeCompact .customButton .sapMBtnInner  {
+    height: 50px !important;
+    background-color: #0e9ce8;
+    color: white;
+}
+
+.sapUiSizeCompact .customButton .sapMToggleBtnPressed  {
+    background-color: #085caf;
+    color: white;
+}
+
+.sapUiSizeCompact .customFooterButton .sapMBtnContent  {
+   font-size: 1.7em;
+}
+
+/******************************************/
+/* Text size for tables                   */
+/******************************************/
+.customTableHeaderSmall {
+	font-size: 1.2em;
+}
+.customTableRowSmall {
+	font-size: 1em;
+}
+
+.customTableRowBackgroundOK {
+    background: green;
+}
+.customTextBig {
+	font-size: 2.5rem;
+	font-style: bold;
+    padding-bottom: 10px;
+}
+
+/******************************************/
+/* Text styles                            */
+/******************************************/
+.customTextSmall {
+	font-size: 1.5em;
+    padding-bottom: 10px;
+}
+.customTextMedium {
+	font-size: 1.7em;
+    padding-bottom: 10px;
+}
+
+.customTextLarge {
+	font-size: 1.9em;
+	font-style: bold;
+    padding-bottom: 6px;
+}
+
+
+/******************************************/
+/* Blue arrow button style                */
+/******************************************/
+.actionButton .sapMBtnInner {
+font-size: 2.5rem;
+border-color: transparent;
+background-color: transparent;
+color: white;
+vertical-align: middle;
+text-align: center;
+height: 200px;
+padding-top: 50px;
+}
+.actionButton.sapMBtn:hover>.sapMBtnHoverable {
+background-color: transparent;
+color: white;
+font-size: 2.5rem;
+border-color: transparent;
+}
+.actionButton.sapMBtn:hover>.sapMBtnHoverable .sapMBtnContent{
+background-color: transparent;
+color: white;
+font-size: 2.5rem;
+border-color: transparent;
+}
+
+
+
+/******************************************/
+/* Messages								  */
+/******************************************/
+/* Style definition for the message text */
+.sapMMsgStripMessage .sapMText {
+    font-size: 1.5rem;
+}
+
+/******************************************/
+/* Arrow action button  				  */
+/******************************************/
+/* The blue arrow action button */
+/*.arrowButton {
+background: url('../img/arrow_right.png') no-repeat; 
+ background-color: white;
+background-size: 100% 100%;
+}
+*/
+.arrowButton {
+    width: 80%;
+    height: 65px;
+    position: relative;
+    color: white;
+    font-size: 30px;
+    background-color: #0e9ce8;
+    border: 1px solid rgba(52, 184, 220, 1);
+    border-radius: 5px 0 0px 5px;
+}
+
+.arrowButton:before {
+    content: "";
+    position: absolute;
+    right: -20px;
+    bottom: -1px;
+    width: 0;
+    height: 0;
+    border-left: 20px solid #0e9ce8;
+    border-top: 32.5px solid transparent;
+    border-bottom: 32.5px solid transparent;
+}
+
+.arrowButton:focus {
+    outline-width: thin;
+    outline-style: dotted;
+    outline-offset: -2px;
+    outline-color: black;
+}
+
+.arrowButton:active {
+    outline-color: white;
+    outline-width: thin;
+    outline-style: dotted;
+    outline-offset: -2px;
+}
+
+.arrowButton2 {
+    background: #0e9ce8;
+      display: inline-block;
+      height: 25px;
+      margin-left: 20px;
+      margin-top: 55px;
+      position: relative;
+      width: 500px;
+      border: 1px solid rgba(52, 184, 220, 1);
+      border-radius: 5px 5px 0px 0px;
+}
+/*.arrowButton2 {
+    /*width: 80%;
+    height: 65px;
+    position: relative;
+    color: white;
+    font-size: 10px;
+    background-color: #0e9ce8;
+    border: 1px solid rgba(52, 184, 220, 1); 
+    /*border-radius: 0px 0px 60px 60px;
+    border-width: 0 5px 5px 0;
+    padding: 5px;
+    transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+} */
+
+
+.arrowButton2:before {
+    border-top: 35px solid#0e9ce8;
+      border-left: 250px solid transparent;
+      border-right: 250px solid transparent;
+      content: "";
+      height: 0;
+      left: 0;
+      position: absolute;
+      bottom: -35px;
+      width: 0;
+}
+
+.arrowButton2:focus {
+    outline-width: thin;
+    outline-style: dotted;
+    outline-offset: -2px;
+    outline-color: black;
+}
+
+.arrowButton2:active {
+    outline-color: white;
+    outline-width: thin;
+    outline-style: dotted;
+    outline-offset: -2px;
+}
+/******************************************/
+/* Stack image  				  */
+/******************************************/
+/* Represents an stack */
+.stack {
+/*background-image: url('../img/Stack.png'); 
+background-size: 100% 100%;*/
+background: url(../img/Stack4.png) no-repeat; 
+background-size: 100% 100%;
+/* background-color: blue; */ 
+margin-right: 20px;
+
+}
+.item1 {
+/*background-image: url('../img/Stack.png'); 
+background-size: 100% 100%;*/
+background: url(../img/Item_relevant.png) no-repeat; 
+background-size: 100% 100%;
+margin-right: 20px;
+margin-left: 20px;
+
+/* background-color: blue; */
+
+}
+.item2 {
+/*background-image: url('../img/Stack.png'); 
+background-size: 100% 100%;*/
+background: url(../img/Item_notrelevant.png) no-repeat; 
+background-size: 100% 100%;
+/* background-color: blue; */
+padding: 0px;
+}

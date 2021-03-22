@@ -1,0 +1,12 @@
+<mvc:View controllerName="y20_out_pick_s.controller.Messages"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc" id="messagesView">
+
+    <HBox>
+        <Button icon="sap-icon://arrow-top" text="{i18n>exit}" press="onExitPressed" class="customFooterButton"/>
+		<ToggleButton id="btn_keyboard" pressed="{ELEMENTS>/btn_keyboard/pressed}" icon="sap-icon://keyboard-and-mouse" press="onShowKeyboard" class="customFooterButton" />
+       <HBox width="85%" id="messageHBox" justifyContent="Center" alignItems="Stretch" alignContent="Stretch" class="sapUiSmallMarginEnd"/>
+        <Button icon="sap-icon://alert" text="{= ${message>/}.length }" visible="true" class="sapUiSmallMarginEnd customFooterButton" press="onMessagePopoverPress"/>
+    </HBox>
+
+</mvc:View>

@@ -1,0 +1,619 @@
+class ZSWL_CL_AS_HU definition
+  public
+  final
+  create public .
+
+public section.
+
+  class-methods GET_ALL_SUB_HUS
+    importing
+      !IO_TOP_HU type ref to ZSWL_CL_HU
+    returning
+      value(RT_HU_REFS) type ZSWL_TT_HU_REF
+    raising
+      ZCX_EWM_GENERAL_EXCEPTION .
+  class-methods CLASS_CONSTRUCTOR .
+  class-methods CHANGE_GRID
+    importing
+      !IV_HUTYPE type /SCWM/DE_HUTYP
+      !IV_HUIDENT type /SCWM/DE_HUIDENT
+      !IV_LGNUM type /SCWM/LGNUM
+    changing
+      !CO_LOG type ref to ZSWL_CL_LOG optional
+    returning
+      value(RT_HU_REF) type ZSWL_TT_HU_REF
+    raising
+      ZCX_EWM_GENERAL_EXCEPTION .
+  class-methods CREATE_AS_HU
+    importing
+      !IV_HUIDENT type /SCWM/DE_HUIDENT
+      !IV_LGNUM type /SCWM/LGNUM
+      !IV_LGPLA type /SCWM/DE_LGPLA
+      !IV_CREATE type BOOLEAN default ABAP_FALSE
+      !IO_LOG type ref to ZSWL_CL_LOG optional
+    returning
+      value(RO_TOP_HU) type ref to ZSWL_CL_HU
+    raising
+      ZCX_EWM_GENERAL_EXCEPTION .
+  class-methods GET_HU_LAYOUT
+    importing
+      !IV_HUTYPE type /SCWM/DE_HUTYP optional
+      !IV_DEFAULT type BOOLEAN optional
+    returning
+      value(RS_HULAYOUT) type ZSWL_TC_HULAYOUT
+    raising
+      ZCX_EWM_GENERAL_EXCEPTION .
+  class-methods CREATE_AS_HUS
+    importing
+      !IV_LGNUM type /SCWM/LGNUM
+      !IV_HUIDENT_FROM type /SCWM/DE_HUIDENT optional
+      !IV_HUIDENT_TO type /SCWM/DE_HUIDENT optional
+      !IV_LGPLA type /SCWM/DE_LGPLA
+      !IV_SIMULATE type BOOLEAN default ABAP_FALSE
+      !IT_HUIDENTS type RSELOPTION optional
+    changing
+      !GO_LOG type ref to ZSWL_CL_LOG
+    raising
+      ZCX_EWM_GENERAL_EXCEPTION .
+protected section.
+private section.
+
+  class-data GT_HU_LAYOUT type ZSWL_TT_HULAYOUT .
+ENDCLASS.
+
+
+
+CLASS ZSWL_CL_AS_HU IMPLEMENTATION.
+
+
+METHOD change_grid.
+************************************************************************
+* Company     : Swisslog AG
+*
+* Package     : ZSWL_AUTOSTORE
+* Class       : ZSWL_CL_AS_HU
+* Description : Change the layout of an AutoStore HU.
+*               The change is only possible if the complete AS HU is empty.
+*               The old Sub HU's will be deleted and after that we create
+*               x new Sub HU's, defined in the ZSWL_TC_HULAYOUT. At the end
+*               of the method we pack all created Sub HU's into the Top HU
+*               and refresh the HU header.
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Version ¦ Date       ¦ Author           ¦ Description
+* ------- ¦ ---------- ¦ ---------------- ¦ ----------------------------
+* 1.0     ¦ 2016-06-28 ¦ b7pleif          ¦ Initial
+* 1.1     ¦ 2016-09-27 ¦ B7REHMT          ¦ Review
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    "  Local Declarations..
+    " ------------------------------------------ "
+    DATA:
+*          lr_pack_mat    TYPE REF TO zswl_cl_pack_mat,
+          lr_hu          TYPE REF TO zswl_cl_hu,
+          lr_top_hu      TYPE REF TO zswl_cl_hu,
+          lv_huident     TYPE /scwm/de_huident,
+          lv_top_huident TYPE /scwm/de_huident,
+          lv_identify_x  TYPE c LENGTH 1,
+          lv_identify    TYPE c LENGTH 3,
+          lt_huids       TYPE /scwm/tt_guid_hu,
+          ls_huid        LIKE LINE OF lt_huids,
+          ls_top_huhdr   TYPE /scwm/s_huhdr_int,
+          ls_sub_huhdr   TYPE /scwm/s_huhdr_int,
+          lt_sub_hus     TYPE /scwm/tt_hutree,
+          ls_sub_hu      LIKE LINE OF lt_sub_hus,
+          lt_guid_hu     TYPE /scwm/tt_guid_hu,
+          ls_guid_hu     LIKE LINE OF lt_guid_hu,
+          lt_huitems     TYPE /scwm/tt_stock_select,
+          lv_exist       TYPE xfeld,
+          lt_hu_refs     TYPE zswl_tt_hu_ref,
+          ls_hu_ref      LIKE LINE OF lt_hu_refs,
+          ls_hulayout    TYPE zswl_tc_hulayout,
+          lv_type        TYPE n LENGTH 2,
+          lv_cont        TYPE n LENGTH 2,
+          lv_lines       TYPE i.
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+*   Check if log object is supplied
+    IF co_log IS NOT BOUND.
+      CREATE OBJECT co_log.
+    ENDIF.
+
+*   delete zeros
+    lv_top_huident = iv_huident.
+    zswl_cl_hu=>delete_leading_zeros_huident( CHANGING c_hu = lv_top_huident ).
+
+    "check that the HUIDENT is not longer than 6 characters
+
+*   check if the HU has already an layout
+    zswl_cl_hu=>is_hu_existing( EXPORTING i_huident = lv_top_huident i_lgnum = iv_lgnum IMPORTING e_existing = lv_exist ).
+    IF lv_exist = abap_false.
+      MESSAGE e016(zswl_hu) INTO zswl_cl_log=>m_dummy_msg WITH lv_top_huident.
+      zcx_ewm_general_exception=>raise_system_exception( ).
+    ENDIF.
+
+*   Create top HU reference
+    CREATE OBJECT lr_top_hu
+      EXPORTING
+        i_lgnum        = iv_lgnum
+        i_huident      = lv_top_huident
+        io_log         = co_log
+        i_read_hu_tree = abap_true.
+
+
+    IF lr_top_hu IS BOUND.
+      IF iv_hutype = lr_top_hu->get_hutyp( ).
+        RETURN. "Same hu type no change go out
+      ENDIF.
+
+      "Get all Sub HU's
+      lt_sub_hus = lr_top_hu->get_hutree( ).
+      lv_lines = lines( lt_sub_hus ).
+
+*     Log amount of Sub HU's
+      MESSAGE i022(zswl_as) INTO zswl_cl_log=>m_dummy_msg WITH lv_lines lv_top_huident.
+      co_log->add( i_syst = abap_true ).
+
+      IF lv_lines > 0. "Check if the HU has sub HU's
+*       Check if one Sub HU contains stock
+        LOOP AT lt_sub_hus INTO ls_sub_hu.
+          CLEAR ls_guid_hu.
+          ls_guid_hu-guid_hu = ls_sub_hu-guid.
+          APPEND ls_guid_hu TO lt_guid_hu.
+        ENDLOOP.
+
+        CALL FUNCTION '/SCWM/SELECT_STOCK'
+          EXPORTING
+            iv_lgnum   = iv_lgnum
+            it_guid_hu = lt_guid_hu
+          IMPORTING
+            et_huitm   = lt_huitems
+*           ET_HUHDR   =
+          EXCEPTIONS
+            error      = 1
+            OTHERS     = 2.
+        IF sy-subrc <> 0.
+          "Stock on Sub HU found. Grid change no longer available
+          MESSAGE e019(zswl_as) INTO zswl_cl_log=>m_dummy_msg WITH lv_top_huident.
+          zcx_ewm_general_exception=>raise_system_exception( ).
+        ENDIF.
+
+        IF lines( lt_huitems ) > 0.
+          "Stock on Sub HU found. Grid change no longer available
+          MESSAGE e019(zswl_as) INTO zswl_cl_log=>m_dummy_msg WITH lv_top_huident.
+          zcx_ewm_general_exception=>raise_system_exception( ).
+        ENDIF.
+
+      ENDIF.
+
+*     Change grid
+
+*     First read and delete all sub HU's
+      zswl_cl_hu=>read_hus_by_guid( EXPORTING i_lgnum = iv_lgnum it_guid = lt_guid_hu iv_only_sub_hus = abap_true IMPORTING et_hu = lt_hu_refs ).
+
+      LOOP AT lt_hu_refs INTO ls_hu_ref.
+        ls_hu_ref-o_hu->delete( ).
+      ENDLOOP.
+
+*     Second create x Sub HU's for HU Type
+      ls_hulayout = zswl_cl_as_hu=>get_hu_layout( iv_hutype = iv_hutype ).
+      MESSAGE i023(zswl_as) INTO zswl_cl_log=>m_dummy_msg WITH iv_hutype.
+      co_log->add( i_syst = abap_true ).
+
+      "build sub HU's for x and y coordinates
+      DO ls_hulayout-x_rows TIMES.
+        lv_identify_x = sy-index.
+        DO ls_hulayout-y_cols TIMES.
+          CLEAR: lr_hu, ls_huid, ls_hu_ref.
+          lv_identify = lv_identify_x && sy-index.
+          lv_huident = lv_top_huident && lv_identify.
+          CREATE OBJECT lr_hu
+            EXPORTING
+              i_lgnum     = iv_lgnum
+              i_create_hu = abap_true
+              i_pmat      = ls_hulayout-pack_material_sub_hu
+              i_lgpla     = lr_top_hu->get_huhdr_hu( )-lgpla
+*             io_log      =
+              i_huident   = lv_huident.
+
+          MESSAGE i024(zswl_as) INTO zswl_cl_log=>m_dummy_msg WITH lv_huident lv_top_huident.
+          co_log->add( i_syst = abap_true ).
+
+
+          IF lr_hu IS BOUND.
+            "Update AS Z-fields on HU-Header
+            ls_sub_huhdr = lr_hu->get_huhdr_hu( ).
+            ls_sub_huhdr-zzswl_as_x_comp = lv_identify+0(1).
+            ls_sub_huhdr-zzswl_as_y_comp = lv_identify+1(1).
+            lr_hu->update_huhdr( EXPORTING is_huhdr = ls_sub_huhdr ).
+
+            ls_huid-guid_hu = lr_hu->get_guid( ).
+            APPEND ls_huid TO lt_huids.
+
+            ls_hu_ref-lgnum = iv_lgnum.
+            ls_hu_ref-huident = lr_hu->get_huhdr_hu( )-huident.
+            ls_hu_ref-o_hu = lr_hu.
+            APPEND ls_hu_ref TO rt_hu_ref.
+          ENDIF.
+        ENDDO.
+      ENDDO.
+
+    ENDIF.
+
+    "Pack HU to TOP HU
+    lr_top_hu->pack_hu_to_hu( EXPORTING it_source_guid_hu = lt_huids ).
+    lr_top_hu->refresh( iv_read_hu_tree = abap_true ).
+    MESSAGE i025(zswl_as) INTO zswl_cl_log=>m_dummy_msg WITH lv_top_huident.
+    co_log->add( i_syst = abap_true ).
+
+
+    "Change the HU Type with the correct layout HU Type
+    ls_top_huhdr = lr_top_hu->get_huhdr_hu( ).
+    ls_top_huhdr-letyp = ls_hulayout-hutyp.
+    "Set the initial content code
+    lv_type = ls_hulayout-x_rows * ls_hulayout-y_cols.
+    lv_cont = 0.
+    ADD ls_hulayout-cc_addition TO lv_cont.
+    ls_top_huhdr-zzswl_as_cont_code = lv_type && lv_cont.
+    lr_top_hu->update_huhdr( EXPORTING is_huhdr = ls_top_huhdr ).
+  ENDMETHOD.
+
+
+METHOD class_constructor.
+************************************************************************
+* Company     : Swisslog AG
+*
+* Package     : ZSWL_AUTOSTORE
+* Class       : ZSWL_CL_AS_HU
+* Description : Class constructor. Load customizing
+*
+*
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Version ¦ Date       ¦ Author           ¦ Description
+* ------- ¦ ---------- ¦ ---------------- ¦ ----------------------------
+* 1.0     ¦ 2016-06-28 ¦ b7pleif          ¦ Initial
+* 1.1     ¦ 2016-09-27 ¦ B7REHMT          ¦ Review
+*
+************************************************************************
+
+  " ------------------------------------------ "
+  "  Processing Logic..
+  " ------------------------------------------ "
+
+    IF gt_hu_layout IS INITIAL.
+      SELECT * FROM zswl_tc_hulayout INTO CORRESPONDING FIELDS OF TABLE gt_hu_layout.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+METHOD create_as_hu.
+************************************************************************
+* Company     : Swisslog AG
+*
+* Package     : ZSWL_AUTOSTORE
+* Class       : ZSWL_CL_AS_HU
+* Description : Create a AutoStore HU with the default HU Typ which has
+*               no divider. Each AS HU has min. one Sub HU.
+*
+*
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Version ¦ Date       ¦ Author           ¦ Description
+* ------- ¦ ---------- ¦ ---------------- ¦ ----------------------------
+* 1.0     ¦ 2016-06-28 ¦ b7pleif          ¦ Initial
+* 1.1     ¦ 2016-09-27 ¦ B7REHMT          ¦ Review
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    "  Local Declarations..
+    " ------------------------------------------ "
+    DATA:
+          lr_hu          TYPE REF TO zswl_cl_hu,
+          lr_top_hu      TYPE REF TO zswl_cl_hu,
+          lv_huident     TYPE /scwm/de_huident,
+          lv_top_huident TYPE /scwm/de_huident,
+          lv_identify_x  TYPE c LENGTH 1,
+          lv_identify    TYPE c LENGTH 3,
+          lt_huids       TYPE /scwm/tt_guid_hu,
+          ls_huid        LIKE LINE OF lt_huids,
+          ls_top_huhdr   TYPE /scwm/s_huhdr_int,
+          ls_sub_huhdr   TYPE /scwm/s_huhdr_int,
+          ls_hulayout    TYPE zswl_tc_hulayout,
+          lv_exist       TYPE xfeld,
+          lv_type        TYPE n LENGTH 2,
+          lv_cont        TYPE n LENGTH 2
+          .
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+
+*   Delete zeros
+    lv_top_huident = iv_huident.
+    zswl_cl_hu=>delete_leading_zeros_huident( CHANGING c_hu = lv_top_huident ).
+
+*   Check if the HU already exist
+    zswl_cl_hu=>is_hu_existing( EXPORTING i_huident = lv_top_huident i_lgnum = iv_lgnum IMPORTING e_existing = lv_exist ).
+    IF lv_exist = abap_true.
+      MESSAGE e013(zswl_hu) INTO zswl_cl_log=>m_dummy_msg WITH lv_top_huident.
+      zcx_ewm_general_exception=>raise_system_exception( ).
+    ENDIF.
+
+*   Get the default customizing entry for creation
+    ls_hulayout = zswl_cl_as_hu=>get_hu_layout( iv_default = abap_true ).
+
+    "check that the HUIDENT is not longer than 6 characters
+
+
+*   Create the Top HU
+    CREATE OBJECT lr_top_hu
+      EXPORTING
+        i_lgnum     = iv_lgnum
+        io_log      = io_log
+        i_huident   = lv_top_huident
+        i_create_hu = iv_create
+        i_pmat      = ls_hulayout-pack_material
+        i_lgpla     = iv_lgpla.
+
+    IF lr_top_hu IS BOUND.
+
+      "build sub HU's for x and y coordinates
+      DO ls_hulayout-x_rows TIMES.
+        lv_identify_x = sy-index.
+        DO ls_hulayout-y_cols TIMES.
+          CLEAR: lr_hu, ls_huid.
+          lv_identify = lv_identify_x && sy-index.
+          lv_huident = lv_top_huident && lv_identify.
+          CREATE OBJECT lr_hu
+            EXPORTING
+              i_lgnum     = iv_lgnum
+              i_create_hu = abap_true
+              i_pmat      = ls_hulayout-pack_material_sub_hu
+              i_lgpla     = lr_top_hu->get_huhdr_hu( )-lgpla
+              io_log      = io_log
+              i_huident   = lv_huident.
+
+          IF lr_hu IS BOUND.
+            "Update AS Z-fields on HU-Header
+            ls_sub_huhdr = lr_hu->get_huhdr_hu( ).
+            ls_sub_huhdr-zzswl_as_x_comp = lv_identify+0(1).
+            ls_sub_huhdr-zzswl_as_y_comp = lv_identify+1(1).
+            lr_hu->update_huhdr( EXPORTING is_huhdr = ls_sub_huhdr ).
+
+            ls_huid-guid_hu = lr_hu->get_guid( ).
+            APPEND ls_huid TO lt_huids.
+          ENDIF.
+        ENDDO.
+      ENDDO.
+
+      "Pack HU to TOP HU
+      lr_top_hu->pack_hu_to_hu( EXPORTING it_source_guid_hu = lt_huids ).
+      lr_top_hu->refresh( ).
+      "Change the HU Type with the correct layout HU Type
+      ls_top_huhdr = lr_top_hu->get_huhdr_hu( ).
+      ls_top_huhdr-letyp = ls_hulayout-hutyp.
+      "Set the initial content code
+      lv_type = ls_hulayout-x_rows * ls_hulayout-y_cols.
+      lv_cont = 0.
+      ls_top_huhdr-zzswl_as_cont_code = lv_type && lv_cont.
+      lr_top_hu->update_huhdr( EXPORTING is_huhdr = ls_top_huhdr ).
+
+      lr_top_hu->refresh( ).
+      ro_top_hu = lr_top_hu.
+
+    ENDIF.
+  ENDMETHOD.
+
+
+METHOD CREATE_AS_HUS.
+************************************************************************
+* Company     : Swisslog AG
+*
+* Class       : ZSWL_CL_AS_HU
+* Function    : CREATE_AS_HUS
+* Enhancement :
+* Description : Create a range of AS HUs
+*
+*
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Version ¦ Date       ¦ Author           ¦ Description
+* ------- ¦ ---------- ¦ ---------------- ¦ ----------------------------
+* 1.0     ¦ 2016-11-17 ¦ F. Pleinies      ¦ Initial version
+* 1.1     ¦ 2016-12-16 ¦ T. Rehmann       ¦ Changed message 54 to 60
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    "  Local Declarations..
+    " ------------------------------------------ "
+    DATA:
+      lv_actual_huident TYPE /scwm/de_huident,
+      lv_huident_to     TYPE /scwm/de_huident,
+      lv_counter        TYPE n LENGTH 5,
+      lo_top_hu         TYPE REF TO zswl_cl_hu,
+      lo_exc            TYPE REF TO zcx_ewm_general_exception,
+      lv_lgpla          TYPE /scwm/de_lgpla.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+
+    "Check if table was supplied
+    IF it_huidents IS SUPPLIED AND lines( it_huidents ) > 0.
+      LOOP AT it_huidents INTO DATA(lr_huidents).
+*   Create new AutoStore HU with default hu type
+        lv_actual_huident = lr_huidents-low.
+        zswl_cl_hu=>delete_leading_zeros_huident( CHANGING c_hu = lv_actual_huident ).
+        lv_lgpla = lv_actual_huident.
+        IF iv_simulate = abap_false.
+
+          TRY.
+              zswl_cl_as_hu=>create_as_hu(
+               EXPORTING
+                 iv_lgnum = iv_lgnum
+                 iv_huident = lv_actual_huident
+                 iv_lgpla = lv_lgpla
+                 iv_create = abap_true
+                 io_log = go_log ).
+            CATCH zcx_ewm_general_exception INTO lo_exc.
+              "Catch if AS HU couldn't be created
+          ENDTRY.
+        ELSE.
+          "HU [&1] would be created
+          MESSAGE s060(zswl_as) INTO zswl_cl_log=>m_dummy_msg WITH lv_actual_huident.
+          go_log->add( i_syst = abap_true ).
+        ENDIF.
+
+      ENDLOOP.
+    ELSEIF iv_huident_from IS SUPPLIED AND iv_huident_to IS SUPPLIED.
+      "First insert the starting HU-Ident
+      lv_actual_huident = iv_huident_from.
+      lv_huident_to = iv_huident_to.
+      zswl_cl_hu=>delete_leading_zeros_huident( CHANGING c_hu = lv_actual_huident ).
+      zswl_cl_hu=>delete_leading_zeros_huident( CHANGING c_hu = lv_huident_to ).
+      DO.
+*   Create new AutoStore HU with default hu type
+        IF iv_simulate = abap_false.
+
+          TRY.
+              lv_lgpla = lv_actual_huident.
+              zswl_cl_as_hu=>create_as_hu(
+               EXPORTING
+                 iv_lgnum = iv_lgnum
+                 iv_huident = lv_actual_huident
+                 iv_lgpla = lv_lgpla
+                 iv_create = abap_true
+                 io_log = go_log ).
+            CATCH zcx_ewm_general_exception INTO lo_exc.
+              "Catch if AS HU couldn't be created
+          ENDTRY.
+        ELSE.
+          "HU [&1] would be created
+          MESSAGE s060(zswl_as) INTO zswl_cl_log=>m_dummy_msg WITH lv_actual_huident.
+          go_log->add( i_syst = abap_true ).
+        ENDIF.
+
+* Go out if we reached the last number
+        IF lv_actual_huident = lv_huident_to.
+          EXIT.
+        ENDIF.
+
+        lv_counter = lv_actual_huident+0(5).
+        lv_counter = lv_counter + 1.
+
+        lv_actual_huident = lv_counter.
+
+      ENDDO.
+    ENDIF.
+  ENDMETHOD.
+
+
+METHOD get_all_sub_hus.
+************************************************************************
+* Company     : Swisslog AG
+*
+* Package     : ZSWL_AUTOSTORE
+* Class       : ZSWL_CL_AS_HU
+* Description : Return all Sub HU's of the incoming Top HU as
+*               references in a internal table.
+*
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Version ¦ Date       ¦ Author           ¦ Description
+* ------- ¦ ---------- ¦ ---------------- ¦ ----------------------------
+* 1.0     ¦ 2016-06-28 ¦ F. Pleinies      ¦ Initial
+* 1.1     ¦ 2016-09-27 ¦ T. Rehmann       ¦ Review
+************************************************************************
+
+  " ------------------------------------------ "
+  "  Local Declarations..
+  " ------------------------------------------ "
+    DATA: lt_sub_hus TYPE /scwm/tt_hutree,
+          ls_sub_hu  LIKE LINE OF lt_sub_hus,
+          lt_guid_hu TYPE /scwm/tt_guid_hu,
+          ls_guid_hu LIKE LINE OF lt_guid_hu.
+
+  " ------------------------------------------ "
+  "  Processing Logic..
+  " ------------------------------------------ "
+
+    "Get all Sub HU's
+    lt_sub_hus = io_top_hu->get_hutree( ).
+
+*   loop over all sub hu's to get the HU GUID
+    LOOP AT lt_sub_hus INTO ls_sub_hu.
+      CLEAR ls_guid_hu.
+      ls_guid_hu-guid_hu = ls_sub_hu-guid.
+      APPEND ls_guid_hu TO lt_guid_hu.
+    ENDLOOP.
+
+    "Read all Sub HU references by HU GUID
+    zswl_cl_hu=>read_hus_by_guid(
+      EXPORTING
+        i_lgnum = io_top_hu->get_huhdr_hu( )-lgnum
+        it_guid = lt_guid_hu
+        iv_only_sub_hus = abap_true
+      IMPORTING
+        et_hu = rt_hu_refs ).
+
+
+
+  ENDMETHOD.
+
+
+METHOD get_hu_layout.
+************************************************************************
+* Company     : Swisslog AG
+*
+* Package     : ZSWL_AUTOSTORE
+* Class       : ZSWL_CL_AS_HU
+* Description : Return the customzing entry for the incoming HU Type
+*
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Version ¦ Date       ¦ Author           ¦ Description
+* ------- ¦ ---------- ¦ ---------------- ¦ ----------------------------
+* 1.0     ¦ 2016-06-28 ¦ b7pleif          ¦
+* 1.1     ¦ 2016-09-27 ¦ B7REHMT          ¦ Review
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF iv_default IS SUPPLIED AND iv_default = abap_true.
+      READ TABLE gt_hu_layout INTO rs_hulayout WITH KEY creation = abap_true.
+      IF sy-subrc <> 0.
+        MESSAGE e026(zswl_as) INTO zswl_cl_log=>m_dummy_msg.
+        zcx_ewm_general_exception=>raise_system_exception( ).
+      ENDIF.
+
+    ELSEIF iv_hutype IS SUPPLIED.
+      READ TABLE gt_hu_layout INTO rs_hulayout WITH KEY hutyp = iv_hutype.
+      IF sy-subrc <> 0.
+        MESSAGE e020(zswl_as) INTO zswl_cl_log=>m_dummy_msg WITH iv_hutype.
+        zcx_ewm_general_exception=>raise_system_exception( ).
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+ENDCLASS.

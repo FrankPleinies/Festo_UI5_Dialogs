@@ -1,0 +1,48 @@
+<core:FragmentDefinition
+	xmlns:core="sap.ui.core"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:l="sap.ui.layout"
+	xmlns:table="sap.ui.table"
+	xmlns:form="sap.ui.layout.form"
+	xmlns="sap.m">
+	<VBox height="auto" justifyContent="Start">
+
+		<VBox height="100%" justifyContent="Start">
+			<HBox width="100%" justifyContent="SpaceBetween" alignItems="Stretch" alignContent="Stretch" class="customInnerCellHeaderBox">
+				<Text class="customInnerCellHeaderText" text="{i18n>mainScreenThirdCellTitle}"/>
+				<Text class="customInnerCellHeaderText" id="warehouseOrderTitle" text="{modelWarehouseOrder>/Who}"/>
+			</HBox>
+			<!-- 
+		  	<FlexBox class="sapUiNoMarginTop" justifyContent="SpaceBetween">
+				<Text class="sapUiTinyMarginBegin sapUiNoMarginTop customTextSmall" text="{i18n>formWarehouseOrderField5}"/>
+				<Text class="sapUiTinyMarginEnd sapUiNoMarginTop customTextSmall" text=""/>
+			</FlexBox>
+			 -->
+			<!-- WarehouseOrder:Storage Type -->
+			<FlexBox class="sapUiTinyMarginTop" justifyContent="SpaceBetween">
+				<Text class="sapUiTinyMarginBegin sapUiTinyMarginTop customTextSmall" text="{i18n>formWarehouseOrderField6}"/>
+				<Text class="sapUiTinyMarginEnd sapUiTinyMarginTop customTextSmall" text="{modelWarehouseOrder>/Nltyp}"/>
+			</FlexBox>
+			<!-- WarehouseOrder: Storage Section -->
+			<FlexBox class="sapUiNoMarginTop" justifyContent="SpaceBetween">
+				<Text class="sapUiTinyMarginBegin sapUiNoMarginTop customTextSmall" text="{i18n>formWarehouseOrderField7}"/>
+				<Text class="sapUiTinyMarginEnd sapUiNoMarginTop customTextSmall" text="{modelWarehouseOrder>/Nlber}"/>
+			</FlexBox>
+			<!-- WarehouseOrder: Aisle -->
+			<FlexBox class="sapUiNoMarginTop" justifyContent="SpaceBetween">
+				<Text class="sapUiTinyMarginBegin sapUiNoMarginTop customTextSmall" text="{i18n>formWarehouseOrderField8}"/>
+				<Text class="sapUiTinyMarginEnd sapUiNoMarginTop customTextSmall" text="{modelWarehouseOrder>/Aisle}"/>
+			</FlexBox>
+			<!-- WarehouseOrder: X Position -->
+			<FlexBox class="sapUiNoMarginTop" justifyContent="SpaceBetween">
+				<Text class="sapUiTinyMarginBegin sapUiNoMarginTop customTextSmall" text="{i18n>formWarehouseOrderField9}"/>
+				<Text class="sapUiTinyMarginEnd sapUiNoMarginTop customTextSmall" text="{modelWarehouseOrder>/Stack}"/>
+			</FlexBox>
+			<!-- WarehouseOrder: Level -->
+			<FlexBox class="sapUiNoMarginTop" justifyContent="SpaceBetween">
+				<Text class="sapUiTinyMarginBegin sapUiNoMarginTop customTextSmall" text="{i18n>formWarehouseOrderField10}"/>
+				<Text class="sapUiTinyMarginEnd sapUiNoMarginTop customTextSmall" text="{modelWarehouseOrder>/LvlV}"/>
+			</FlexBox>
+		</VBox>
+	</VBox>
+</core:FragmentDefinition>

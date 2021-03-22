@@ -1,0 +1,87 @@
+{
+    "Objects": [
+        {
+            "LGNUM": "",
+            "SCAN": "",
+            "Scan_WarehouseTaskNav": {
+                "QUAN": {
+                    "QUAN": "0",
+                    "UNIT": ""
+                },
+                "PICK_QTY": {
+                    "QUAN": "0",
+                    "UNIT": ""
+                },
+                "PACK_QTY": {
+                    "QUAN": "0",
+                    "UNIT": ""
+                },
+                "LGNUM": "",
+                "TANUM": "",
+                "PROCTY": "",
+                "WHO": "",
+                "MATID": "00000000-0000-0000-0000-000000000000",
+                "MATNR": "",
+                "MAKTX": "",
+                "VLTYP": "",
+                "VLBER": "",
+                "VLPLA": "",
+                "VLENR": "",
+                "NLTYP": "",
+                "NLBER": "",
+                "NLPLA": ""
+            }
+        },
+        {
+            "LGNUM": "",
+            "SCAN": "",
+            "Scan_TrolleyNav": {
+                "QUAN": {
+                    "QUAN": "0.00000000000000",
+                    "UNIT": ""
+                },
+                "LGNUM": "",
+                "TROLLEY": "",
+                "HU": "",
+                "HUTYPE": "",
+                "LOGPOS": "",
+                "POOLNAME": "",
+                "MATNR": ""
+            },
+            "Scan_WarehouseTaskNav": {
+                "QUAN": {
+                    "QUAN": "0.00000000000000",
+                    "UNIT": ""
+                },
+                "PICK_QTY": {
+                    "QUAN": "0.00000000000000",
+                    "UNIT": ""
+                },
+                "PACK_QTY": {
+                    "QUAN": "0.00000000000000",
+                    "UNIT": ""
+                },
+                "LGNUM": "",
+                "TANUM": "",
+                "PROCTY": "",
+                "WHO": "",
+                "MATID": "00000000-0000-0000-0000-000000000000",
+                "MATNR": "",
+                "MAKTX": "",
+                "VLTYP": "",
+                "VLBER": "",
+                "VLPLA": "",
+                "VLENR": "",
+                "NLTYP": "",
+                "NLBER": "",
+                "NLPLA": ""
+            }
+        },
+        {
+            "Name": "Chang",
+            "Supplier": "New Orleans Cajun Delights",
+            "Price": "56.00 EUR",
+            "Units": "40 PC"
+        }
+    ]
+}

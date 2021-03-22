@@ -1,0 +1,22 @@
+{
+	"btn_apply": 
+	{
+		"enabled": true,
+		"visible": true
+	},
+	"btn_refresh": 
+	{
+		"enabled": true,
+		"visible": true
+	},
+	"btn_print": 
+	{
+		"enabled": false,
+		"visible": true
+	},
+	"btn_assign": 
+	{
+		"enabled": true,
+		"visible": true
+	}
+}

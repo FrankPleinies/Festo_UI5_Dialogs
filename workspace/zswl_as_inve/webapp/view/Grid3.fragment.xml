@@ -1,0 +1,55 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout" xmlns:table="sap.ui.table">
+	<VBox height="23rem">
+<VBox height="70%">
+			<table:Table id="tblCountItems" selectionBehavior="RowOnly" noData="keine Daten" rowActionCount="1" rowSelectionChange="onSelect" visibleRowCount="5"
+				selectionMode="Single" rows="{CountItems>/results}"  enableColumnReordering="false" width="auto" enableCellFilter="true" sort="sortTable">
+					<table:rowSettingsTemplate>
+						<table:RowSettings highlight="{  
+									path: 'CountItems>Result',
+									formatter: '.formatter.setHighlight'}" />
+					</table:rowSettingsTemplate>
+				<table:columns >
+					<table:Column >
+						<Label text="{i18n>Table_Col1}" class="customTableHeaderSmall"/>
+						<table:template class="customTableRowBackgroundOK">
+							<Text text="{CountItems>Compartment}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="Product/MATNR">
+						<Label text="{i18n>Table_Col2}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{CountItems>Product/MATNR}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="TaskCount">
+						<Label text="{i18n>Table_Col3}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{CountItems>Product/MAKTX}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column>
+						<Label text="{i18n>Table_Col4}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{= ${CountItems>Qty/Quan}*1 }" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column>
+						<Label text="{i18n>Table_Col5}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{CountItems>Qty/Unit}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+				</table:columns>
+			</table:Table>
+			</VBox>
+					<VBox height="25%">
+						<FlexBox justifyContent="Begin" alignItems="Begin" class="sapUiMediumMarginTop">
+							<items>
+								<Button text="{i18n>Btn_HUComplete}" enabled="{ELEMENTS>/btn_hucomplete/enabled}" visible="{ELEMENTS>/btn_hucomplete/visible}" id="btn_hucomplete" press="onPressHUComplete" class="sapUiSmallMargin customButton"/>
+							</items>
+						</FlexBox>
+					</VBox>
+
+	</VBox>
+
+</core:FragmentDefinition>

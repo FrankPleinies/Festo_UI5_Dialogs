@@ -1,0 +1,41 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout" xmlns:table="sap.ui.table">
+	<VBox height="20rem">
+		<VBox height="55%">
+			<table:Table cellClick="onCellClick" id="uiTable" selectionBehavior="RowOnly" noData="keine Daten" rowActionCount="1" rowSelectionChange="onRowSelectionChangeUiTable" visibleRowCount="3"
+				selectionMode="Single" rows="{modelDocItemNav>/results}"  enableColumnReordering="false" width="auto" enableCellFilter="true" sort="sortTable">
+				<table:columns >
+					<table:Column sortProperty="Product/MATNR">
+						<Label text="{i18n>Table_Col1}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{modelDocItemNav>Product/MATNR}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="Position" id="col1">
+						<Label text="{i18n>Table_Col2}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{modelDocItemNav>Product/MAKTX}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="Position" id="col3">
+						<Label text="{i18n>Table_Col3}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{modelDocItemNav>Qty/Quan}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="Position" id="col4">
+						<Label text="{i18n>Table_Col4}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{modelDocItemNav>Qty/Unit}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+				</table:columns>
+			</table:Table>
+		</VBox>
+		<VBox height="45%">
+			<FlexBox direction="Column" width="100%" class="sapUiLargeMarginBegin sapUiSmallMargin" justifyContent="Center">
+				<Button type="Unstyled"  enabled="{ELEMENTS>/btn_pack/enabled}" visible="{ELEMENTS>/btn_pack/visible}" class="arrowButton2" press="onPackPressed" id="btn_pack_to_target" text="{ELEMENTS>/btn_pack/text}"/>
+			</FlexBox>
+		</VBox>
+	</VBox>
+
+</core:FragmentDefinition>

@@ -1,0 +1,41 @@
+title=Title
+appTitle=Y20_PTWY_TROLLEY
+appDescription=App Description
+dialog_title=Inbound: Putaway Trolley
+
+chain_Dialog_Message=Scan Trolley to start Putaway
+Grid1_Title=HU
+Grid2_Title=Destination
+Grid3_Title=WH Order
+Grid6_Title=Product
+header_user=User:
+
+Form_Seq=Tr.-Seq
+Form_Trolley=Trolley
+Form_TrolleyPos=Position
+Form_HU=HU
+Form_ScanHU=Scan HU
+Form_Dest=Dest
+Form_ScanDest=Scan Dest.
+Form_Task=Task
+Form_AArea=Activity Area
+Form_WPT=WPT
+Form_SType=Storage Type
+Form_Aisle=Aisle
+Form_XPos=X Position
+Form_Level=Level
+Form_Prod_No=Prod. No.
+Form_Prod_Text=Product
+Form_Qty=Qty
+
+BtnChgDst=Chg Dst
+
+
+ChainTable_Col1=No.
+ChainTable_Col2=Trolley
+ChainTable_Col3=Activity Area
+ChainTable_Col4=Tot.
+
+VERIFY_HU_SUCCESS=HU {0} verified
+VERIFY_HU_FAIL=Wrong HU verified {0}
+CONF_WT_SUCCESS=WT {0} successfully confirmed

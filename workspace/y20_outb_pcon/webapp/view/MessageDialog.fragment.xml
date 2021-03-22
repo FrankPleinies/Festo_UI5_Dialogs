@@ -1,0 +1,25 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+    <Dialog title="{modelMessageDialog>/msgHeader}" id="messageDialog" class="sapUiContentPadding">
+	  <content>
+        <HBox>
+          <VBox width="15%">
+          	<core:Icon
+				src="{modelMessageDialog>/msgIcon}"
+				size="3em"
+				color="{modelMessageDialog>/msgIconColor}" 
+				class="">
+			</core:Icon>
+          </VBox>
+          <VBox width="85%">
+            <Title text="{modelMessageDialog>/msgTitle}" wrapping="true" />
+            <Text text="{modelMessageDialog>/msgText}" />
+          </VBox>
+        </HBox> 
+	  </content>
+      <buttons>
+        <Button class="customButton" press="onCloseMessageDialog" text="{i18n>messageDialogBtnClose}" width="7rem"/>
+      </buttons>
+    </Dialog>
+</core:FragmentDefinition>

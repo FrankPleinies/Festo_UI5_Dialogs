@@ -1,0 +1,224 @@
+CLASS y20_cl_pick_prep_hucrt_dpc_ext DEFINITION
+  PUBLIC
+  INHERITING FROM y20_cl_pick_prep_hucrt_dpc
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    METHODS /iwbep/if_mgw_appl_srv_runtime~get_entityset REDEFINITION.
+    METHODS /iwbep/if_mgw_appl_srv_runtime~create_deep_entity REDEFINITION.
+*    METHODS /iwbep/if_mgw_appl_srv_runtime~get_entity REDEFINITION.
+    METHODS /iwbep/if_mgw_appl_srv_runtime~get_expanded_entity REDEFINITION.
+*    METHODS /iwbep/if_mgw_appl_srv_runtime~update_entity REDEFINITION.
+
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+    "!<p class="shorttext synchronized">Service Header container</p>
+    DATA mo_container TYPE REF TO /iwbep/if_message_container .
+
+    "!<p class="shorttext synchronized">Add message to service container</p>
+    METHODS add_message_to_odata_container
+      IMPORTING
+        !it_bapiret TYPE bapirettab OPTIONAL .
+    "!<p class="shorttext synchronized">Handle log messages</p>
+    METHODS handle_messages
+      IMPORTING
+        !io_log TYPE REF TO y20_cl_log OPTIONAL .
+ENDCLASS.
+
+
+
+CLASS Y20_CL_PICK_PREP_HUCRT_DPC_EXT IMPLEMENTATION.
+
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~create_deep_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Create deep entity. Complex with additional entities
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    BREAK-POINT ID y20_odata_pick_prepare_hucrt.
+    TRY.
+        DATA(lo_entity) = NEW y20_cl_odata_pphucrt_factory( )->create_entity( iv_entity_name = iv_entity_name
+                                                                              io_expand = io_expand ).
+        er_deep_entity = lo_entity->create_deep_entity( io_data_provider ).
+      CATCH /iwbep/cx_mgw_tech_exception.
+        handle_messages( ).
+        RETURN.
+    ENDTRY.
+    IF lo_entity IS BOUND.
+      handle_messages( lo_entity->get_log( ) ).
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~get_entityset.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Get entity set. Entity in list format
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    BREAK-POINT ID y20_odata_pick_prepare_hucrt.
+
+    CLEAR: er_entityset, es_response_context.
+
+    TRY.
+        DATA(lo_entity) = NEW y20_cl_odata_pphucrt_factory( )->create_entity( iv_entity_name = iv_entity_name
+                                                                              it_key_tab     = it_key_tab
+                                                                              it_filter_select_options = it_filter_select_options ).
+        er_entityset = lo_entity->get_entityset( ).
+      CATCH /iwbep/cx_mgw_tech_exception.
+        handle_messages( ).
+        RETURN.
+    ENDTRY.
+    IF lo_entity IS BOUND.
+      handle_messages( lo_entity->get_log( ) ).
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~get_expanded_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Get expanded entity. Complex with additional entities
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    BREAK-POINT ID y20_odata_pick_prepare_hucrt.
+*    DATA:
+*      BEGIN OF ls_document_entity.
+*        INCLUDE TYPE y20_cl_pick_prep_hucrt_mpc=>ts_filterent.
+*    DATA: filter_hutypelist TYPE y20_cl_pick_prep_hucrt_mpc=>tt_hutypelistent,
+*      END OF ls_document_entity.
+*    DATA:
+*      BEGIN OF ls_document_entity.
+*        INCLUDE TYPE y20_cl_pick_prep_hucrt_mpc=>ts_nonewhusent.
+*    DATA: newhu_createdhu  TYPE y20_cl_pick_prep_hucrt_mpc=>tt_createdhuent,
+*        newhu_hutypelist TYPE y20_cl_pick_prep_hucrt_mpc=>ts_hutypelistent,
+*      END OF ls_document_entity.
+*
+*    copy_data_to_ref(
+*      EXPORTING
+*        is_data = ls_document_entity
+*      CHANGING
+*        cr_data = er_entity
+*    ).
+**    APPEND 'FILTER_HUTYPELIST' TO et_expanded_tech_clauses.
+*    APPEND 'NEWHU_CREATEDHU' TO et_expanded_tech_clauses.
+*    APPEND 'NEWHU_HUTYPELIST' TO et_expanded_tech_clauses.
+  ENDMETHOD.
+
+
+  METHOD add_message_to_odata_container.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Add messages to header container
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF mo_container IS NOT BOUND.
+      mo_container = mo_context->get_message_container( ).
+    ENDIF.
+
+    IF mo_container IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    IF lines( it_bapiret ) = 0.
+      mo_container->add_message(
+          iv_msg_type    = sy-msgty
+          iv_msg_id      = sy-msgid
+          iv_msg_number  = sy-msgno
+          iv_msg_v1      = sy-msgv1
+          iv_msg_v2      = sy-msgv2
+          iv_msg_v3      = sy-msgv3
+          iv_msg_v4      = sy-msgv4
+          iv_add_to_response_header = abap_true ).
+      RETURN.
+    ENDIF.
+
+    DATA(lt_messages) = it_bapiret.
+    " want to delete messages from message log class
+    " send to UI only messages relevant to the current application
+    DELETE lt_messages WHERE id = 'Y20_MESSAGE_LOG'.
+
+    LOOP AT lt_messages ASSIGNING FIELD-SYMBOL(<ls_message>).
+      mo_container->add_message(
+        EXPORTING
+          iv_msg_type    = <ls_message>-type
+          iv_msg_id      = <ls_message>-id
+          iv_msg_number  = <ls_message>-number
+          iv_msg_v1      = <ls_message>-message_v1
+          iv_msg_v2      = <ls_message>-message_v2
+          iv_msg_v3      = <ls_message>-message_v3
+          iv_msg_v4      = <ls_message>-message_v4
+          iv_add_to_response_header = abap_true ).
+    ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD handle_messages.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Handle messages for executed request
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF io_log IS SUPPLIED AND io_log IS BOUND.
+      DATA(lt_bapiret) = io_log->get_messages_from_this_log( ).
+      io_log->end_log( ).
+    ENDIF.
+    add_message_to_odata_container( lt_bapiret ).
+  ENDMETHOD.
+ENDCLASS.

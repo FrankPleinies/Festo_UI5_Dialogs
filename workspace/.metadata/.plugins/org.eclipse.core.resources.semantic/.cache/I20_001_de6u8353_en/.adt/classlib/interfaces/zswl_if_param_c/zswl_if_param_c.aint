@@ -1,0 +1,33 @@
+INTERFACE zswl_if_param_c
+  PUBLIC .
+
+
+  CONSTANTS mc_tophu_putawat TYPE zswl_de_param_id1 VALUE 'PTWY_TOPHU' ##NO_TEXT.
+  CONSTANTS mc_wrkst_all TYPE zswl_de_param_id2 VALUE 'WRKST_ALL' ##NO_TEXT.
+
+  CONSTANTS mc_ui5_deco        TYPE zswl_de_param_id1 VALUE 'UI5_DECO' ##NO_TEXT.
+  CONSTANTS mc_ui5_deco_procty TYPE zswl_de_param_id2 VALUE 'UI5_DECO_PROCTY' ##NO_TEXT.
+
+  CONSTANTS mc_deco       TYPE zswl_de_param_id1 VALUE 'DECO' ##NO_TEXT.
+  CONSTANTS mc_deco_putq  TYPE zswl_de_param_id2 VALUE 'PUTQ' ##NO_TEXT.
+  CONSTANTS mc_deco_nltyp TYPE zswl_de_param_id2 VALUE 'NLTYP' ##NO_TEXT.
+  CONSTANTS mc_wrkst_deco TYPE zswl_de_param_id2 VALUE 'WRKST_DECO' ##NO_TEXT.
+
+  CONSTANTS mc_hu_hdr     TYPE zswl_de_param_id1 VALUE 'HU_HDR' ##NO_TEXT.
+  CONSTANTS mc_hu_procs_receive   TYPE zswl_de_param_id2 VALUE 'PROCS_RECEIVE' ##NO_TEXT.
+
+  CONSTANTS mc_putst TYPE zswl_de_param_id1 VALUE 'PUTST' ##NO_TEXT.
+  CONSTANTS mc_rnd_heavy TYPE zswl_de_param_id2 VALUE 'RND_HEAVY' ##NO_TEXT.
+  CONSTANTS mc_hsbt TYPE zswl_de_param_id2 VALUE 'HSBT' ##NO_TEXT.
+  CONSTANTS mc_qi_inb TYPE zswl_de_param_id1 VALUE 'QI' ##NO_TEXT.
+  CONSTANTS mc_wrkst_qual TYPE zswl_de_param_id2 VALUE 'WRKST_QUAL' ##NO_TEXT.
+  CONSTANTS mc_qi_fup_conf TYPE zswl_de_param_id2 VALUE 'QI_FUP_CONF' ##NO_TEXT.
+  CONSTANTS mc_interface TYPE zswl_de_param_id1 VALUE 'INTERFACE' ##NO_TEXT.
+  CONSTANTS mc_noerpweightupd TYPE zswl_de_param_id2 VALUE 'NOERPWEIGHTUPD' ##NO_TEXT.
+  CONSTANTS mc_repl TYPE zswl_de_param_id1 VALUE 'REPL' ##NO_TEXT.
+  CONSTANTS mc_putwpt TYPE zswl_de_param_id2 VALUE 'PUTWPT' ##NO_TEXT.
+  CONSTANTS mc_binwpt TYPE zswl_de_param_id2 VALUE 'BINWPT' ##NO_TEXT.
+  CONSTANTS mc_vstock_inf TYPE zswl_de_param_id1 VALUE 'VSTOCK_INF' ##NO_TEXT.
+  CONSTANTS mc_vstock_type_zvs TYPE zswl_de_param_id2 VALUE 'VSTOCK_TYPE_ZVS' ##NO_TEXT.
+  CONSTANTS mc_trart_post_chng TYPE zswl_de_param_id2 VALUE 'TRART_POST_CHNG' ##NO_TEXT.
+ENDINTERFACE.

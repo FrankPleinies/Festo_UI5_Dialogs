@@ -1,0 +1,19 @@
+{
+	"btn_back": 
+	{
+		"enabled": true,
+		"visible": true
+	},
+	"btn_print": 
+	{
+		"enabled": false,
+		"visible": true
+	},
+	"btn_confirm": 
+	{
+		"enabled": false,
+		"visible": true
+	}
+
+		
+}

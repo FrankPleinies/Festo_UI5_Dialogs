@@ -1,0 +1,31 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout" xmlns:acm="y20_inb_exec_tr.controller">
+	<VBox height="12rem">
+		<VBox>
+			<FlexBox class="sapUiMediumMarginTop" justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Dest}" class="customTextLarge"/>
+					<Text text="{nextWT>/Nlpla}" class="customTextLarge"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_ScanDest}" wrapping="false" class="customTextSmall sapUiTinyMarginTop"/>
+					<!-- <Input value="" id="scanDest" submit="onVerifyDest" class="customInput"/> -->
+					<acm:ScanInput id="scanDest" submit="onVerifyDest" class="customInput">
+						<acm:attributes>
+							<core:CustomData key="inputmode" value="{ELEMENTS>/keyboard/inputmode}" writeToDom="true"/>
+						</acm:attributes>
+					</acm:ScanInput>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="Center" alignItems="End">
+				<items>
+					<ToggleButton id="tgbtn_chgDst" text="{i18n>BtnChgDst}" enabled="{ELEMENTS>/btn_chgDst/enabled}" pressed="{ELEMENTS>/btn_chgDst/pressed}" press="onPress" class="sapUiMediumMarginTop customButton"/>
+				</items>
+			</FlexBox>
+		</VBox>
+		<VBox>
+		</VBox>
+	</VBox>
+
+</core:FragmentDefinition>

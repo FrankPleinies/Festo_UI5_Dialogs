@@ -1,0 +1,35 @@
+<core:FragmentDefinition xmlns="sap.m"
+    xmlns:l="sap.ui.layout"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:core="sap.ui.core">
+    <Dialog title="New Handling Unit" id="popupDialogNewHU" class="sapUiSizeCozy sapUiContentPadding" afterClose="afterCloseOpenNewHU" afterOpen="afterOpenNewHU">
+        <f:Form editable="true">
+            <f:layout>
+                <f:ResponsiveGridLayout labelSpanXL="3" labelSpanL="3" labelSpanM="3" labelSpanS="12" adjustLabelSpan="false" emptySpanXL="4" emptySpanL="4" emptySpanM="4" emptySpanS="0" columnsXL="1" columnsL="1" columnsM="1" singleContainerFullSize="false" />
+            </f:layout>
+            <f:formContainers>
+                <f:FormContainer>
+                    <f:formElements>
+                        <f:FormElement>
+                            <List class="sapUiMediumMarginBottom customListBorder" showSeparators="None">
+                                <items>
+                                    <StandardListItem title="Handling Unit" info="{modelWarehouseTaskNav>/NEWHU}" />
+                                    <StandardListItem title="Quantity" info="{= ${modelWarehouseTaskNav>/QUAN_NEWHU/QUAN}*1 }"/>
+                                </items>
+                            </List>
+                        </f:FormElement>
+                        <f:FormElement>
+                            <VBox>
+                                <Label text="Scan new Pick HU:" design=""/>
+                                <Input submit="onNewHuSubmitInput" id="newHUInput"/>
+                            </VBox>
+                        </f:FormElement>
+                    </f:formElements>
+                </f:FormContainer>
+            </f:formContainers>
+        </f:Form>
+        <buttons>
+            <Button text="Close" press="onNewHUClose" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

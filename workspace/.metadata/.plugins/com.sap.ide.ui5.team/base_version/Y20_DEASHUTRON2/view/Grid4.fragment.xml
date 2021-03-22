@@ -1,0 +1,15 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core">
+			<grid:CSSGrid xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:grid="sap.ui.layout.cssgrid" id="innergrid4" class="innergrid">
+				<grid:items>
+					<HBox class="innerGridBoxHeader" alignItems="Start" justifyContent="SpaceBetween">
+						<Title text="{i18n>Grid4_Title}" wrapping="true"/>
+						<!--<Title text="200204911" wrapping="true"/>-->
+					</HBox>
+					<VBox class="innerGridBoxBody">
+					
+					<items/>
+					</VBox>
+				</grid:items>
+			</grid:CSSGrid>
+
+</core:FragmentDefinition>

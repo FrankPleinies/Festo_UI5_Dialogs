@@ -1,0 +1,53 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout" xmlns:table="sap.ui.table">
+	<VBox height="23rem">
+<VBox height="75%">
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="HU Type" class="customTextLarge"/>
+					<Text text="{TargetHU>/HUType}" class="customTextLarge"/>
+				</items>
+			</FlexBox>
+			<table:Table cellClick="onCellClick" id="uiTable" selectionBehavior="RowOnly" noData="keine Daten" rowActionCount="1" rowSelectionChange="onRowSelectionChangeUiTable" visibleRowCount="4"
+				selectionMode="Single" rows="{TargetHUItems>/results}"  enableColumnReordering="false" width="auto" enableCellFilter="true" sort="sortTable">
+				<table:columns >
+					<table:Column sortProperty="Product/MATNR">
+						<Label text="{i18n>Table_Col1}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{TargetHUItems>Product/MATNR}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="Position" id="col1">
+						<Label text="{i18n>Table_Col2}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{TargetHUItems>Product/MAKTX}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="Position" id="col3">
+						<Label text="{i18n>Table_Col3}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{TargetHUItems>Qty/Quan}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="Position" id="col4">
+						<Label text="{i18n>Table_Col4}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{TargetHUItems>Qty/Unit}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+				</table:columns>
+			</table:Table>
+			</VBox>
+					<VBox height="25%">
+						<FlexBox justifyContent="Begin" alignItems="Begin" class="sapUiMediumMarginTop">
+							<items>
+								<Button text="{i18n>Btn_HUCreate}" enabled="{ELEMENTS>/btn_hucreate/enabled}" visible="{ELEMENTS>/btn_hucreate/visible}" id="btn_hucreate" press="onPressHUCreate" class="sapUiSmallMargin customButton"/>
+								<Button text="{i18n>Btn_HUDlvComplete}" enabled="{ELEMENTS>/btn_hudlvcomplete/enabled}" visible="{ELEMENTS>/btn_hudlvcomplete/visible}" id="btn_hudlvcomplete" press="onPressHUComplete" class="sapUiSmallMargin customButton"/>
+								<Button text="{i18n>Btn_PMatChange}" enabled="{ELEMENTS>/btn_pmatchange/enabled}" visible="{ELEMENTS>/btn_pmatchange/visible}" id="btn_pmatchange" press="onPressPmatChange" class="sapUiSmallMargin customButton"/>
+								<Button text="{i18n>Btn_HUConsComplete}" enabled="{ELEMENTS>/btn_huconscomplete/enabled}" visible="{ELEMENTS>/btn_huconscomplete/visible}" id="btn_huconscomplete" press="onPressHUComplete" class="sapUiSmallMargin customButton"/>
+							</items>
+						</FlexBox>
+					</VBox>
+
+	</VBox>
+
+</core:FragmentDefinition>

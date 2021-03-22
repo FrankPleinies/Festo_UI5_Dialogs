@@ -1,0 +1,42 @@
+[{
+	"Lgnum": "TMPL",
+	"ScanHU": "2500000205",
+	"ScanHU_HUNav": {
+		"__metadata": {
+			"id": "https://vi20pas.de.festo.net/sap/opu/odata/sap/Y20_EWM_DASS_HU_TROLLEY_SRV/HandlingUnitSet(Lgnum='TMPL',HUIdent='2500000205')",
+			"uri": "https://vi20pas.de.festo.net/sap/opu/odata/sap/Y20_EWM_DASS_HU_TROLLEY_SRV/HandlingUnitSet(Lgnum='TMPL',HUIdent='2500000205')",
+			"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.HandlingUnitEnt"
+		},
+		"PackMaterial": {
+			"__metadata": {
+				"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.Product"
+			},
+			"MatID": "005056a1-7205-1eda-93ce-5aa60ddd11fd",
+			"MatNR": ""
+		},
+		"Product": {
+			"__metadata": {
+				"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.Product"
+			},
+			"MatID": "005056a1-7205-1eda-97ab-adec02c8601c",
+			"MatNR": "150384"
+		},
+		"Quantity": {
+			"__metadata": {
+				"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.Quantity"
+			},
+			"Quan": "50",
+			"Unit": "PC"
+		},
+		"Lgnum": "TMPL",
+		"HUIdent": "2500000205",
+		"HUGUID": "005056a1-7205-1eea-9ce9-7e257e87cbd1",
+		"HUType": "0050",
+		"WarehouseTask": "1000001957",
+		"WarehouseOrder": "2000001585",
+		"ActivArea": "GLH2"
+	}
+}, {
+	"Lgnum": "TMPL",
+	"ScanHU": "2500000208"
+}]

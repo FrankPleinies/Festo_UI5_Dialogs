@@ -1,0 +1,53 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout">
+	<VBox height="25rem">
+		<VBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Filter_AA}" wrapping="false" class="sapUiSmallMarginTop sapUISmallMarginEnd customTextSmall"/>
+					<Input value="{filter>/Aarea}" id="if_aa" submit="onSetAA" class="customInput"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Cons}" wrapping="false" class="sapUiSmallMarginTop sapUISmallMarginEnd customTextSmall"/>
+					<RadioButtonGroup id="rbg1" columns="5">
+						<RadioButton id="RB1-1" text="Auto" />
+						<RadioButton id="RB1-2" text="Yes" />
+						<RadioButton id="RB1-3" text="No" />
+					</RadioButtonGroup>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Pool_Name}" wrapping="false" class="sapUiSmallMarginTop sapUISmallMarginEnd customTextSmall"/>
+					<Input value="{filter>/Pool}" id="if_poolname" submit="onSetAA" class="customInput"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Order_CD}" wrapping="false" class="sapUiSmallMarginTop sapUISmallMarginEnd customTextSmall"/>
+					<Input value="{filter>/OrderComplTime}" id="if_ordertime" submit="onSetAA" class="customInput"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Pool_Mix}" wrapping="false" class="sapUiSmallMarginTop sapUISmallMarginEnd customTextSmall"/>
+					<RadioButtonGroup id="rbg2" columns="5" class="sapUiMediumMarginBottom">
+						<RadioButton id="RB2-1" text="Single" />
+						<RadioButton id="RB2-2" text="Mix" />
+					</RadioButtonGroup>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween" alignItems="End" class="sapUiMediumMarginTop">
+				<items>
+					<Button text="{i18n>BtnApply}" enabled="{ELEMENTS>/btn_apply/enabled}" visible="{ELEMENTS>/btn_apply/visible}" class="sapUiSmallMargin customButton"
+						id="btn_apply" press="onApplyFilter"/>
+					<Button text="{i18n>BtnRefresh}" enabled="{ELEMENTS>/btn_refresh/enabled}" visible="{ELEMENTS>/btn_refresh/visible}" class="sapUiSmallMargin customButton"
+						id="btn_refresh" press="onRefreshFilter"/>
+				</items>
+			</FlexBox>
+		</VBox>
+
+	</VBox>
+
+</core:FragmentDefinition>

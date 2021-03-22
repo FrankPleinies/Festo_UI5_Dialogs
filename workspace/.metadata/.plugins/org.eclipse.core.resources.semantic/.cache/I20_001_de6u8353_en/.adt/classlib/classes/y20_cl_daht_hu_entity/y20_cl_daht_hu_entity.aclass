@@ -1,0 +1,741 @@
+CLASS y20_cl_daht_hu_entity DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    INTERFACES y20_if_odata_entity.
+    "!<p class="shorttext synchronized">Constructor</p>
+    METHODS constructor
+      IMPORTING
+        !io_entity TYPE REF TO y20_cl_daht_entity .
+  PROTECTED SECTION.
+
+  PRIVATE SECTION.
+
+    "!<p class="shorttext synchronized">Instance of current class</p>
+    DATA mo_entity TYPE REF TO y20_cl_daht_entity .
+    "!<p class="shorttext synchronized">Handling Unit entity data</p>
+    DATA ms_hu_entity TYPE y20_cl_dass_hu_trolley_mpc=>ts_handlingunitent .
+    DATA:
+      "!<p class="shorttext synchronized">Expanded entity: ScanHU - HU</p>
+      BEGIN OF ms_scanhu_hu_entity.
+        INCLUDE TYPE y20_cl_dass_hu_trolley_mpc=>ts_scanhandlingunitent.
+    DATA: scanhu_hunav TYPE y20_cl_dass_hu_trolley_mpc=>ts_handlingunitent,
+      END OF ms_scanhu_hu_entity .
+    DATA:
+      "!<p class="shorttext synchronized">Expanded entity: UserCommand - HU</p>
+      BEGIN OF ms_user_command_handling_unit.
+        INCLUDE TYPE y20_cl_dass_hu_trolley_mpc=>ts_usercommandent.
+    DATA: usercomm_hu TYPE y20_cl_dass_hu_trolley_mpc=>ts_handlingunitent,
+      END OF ms_user_command_handling_unit .
+    "!<p class="shorttext synchronized">Method execution string</p>
+    DATA mv_execute_method TYPE string .
+    DATA mo_hu TYPE REF TO y20_cl_odata_handling_unit.
+
+    "!<p class="shorttext synchronized">Handle user command for HU</p>
+    METHODS execute_usercomm_on_hu
+      IMPORTING
+        !io_data_provider TYPE REF TO /iwbep/if_mgw_entry_provider
+      RETURNING
+        VALUE(ro_entity)  TYPE REF TO data
+      RAISING
+        /iwbep/cx_mgw_tech_exception .
+    "!<p class="shorttext synchronized">Get handling unit entity</p>
+    METHODS get_handling_unit_entity
+      RETURNING
+        VALUE(rs_result) TYPE y20_cl_dass_hu_trolley_mpc=>ts_handlingunitent .
+    "!<p class="shorttext synchronized">Get key values supplied from UI</p>
+    METHODS get_hu_entity_key
+      IMPORTING
+        !it_key_tab          TYPE /iwbep/t_mgw_name_value_pair
+      RETURNING
+        VALUE(rs_key_values) TYPE y20_cl_dass_hu_trolley_mpc=>ts_handlingunitent .
+    "!<p class="shorttext synchronized">Get handling unit with expanded entities</p>
+    METHODS get_hu_expanded_entity
+      IMPORTING
+        !it_key_tab      TYPE /iwbep/t_mgw_name_value_pair
+      RETURNING
+        VALUE(ro_entity) TYPE REF TO data
+      RAISING
+        /iwbep/cx_mgw_tech_exception .
+    "!<p class="shorttext synchronized">Read open task of importing table</p>
+    METHODS get_open_task
+      IMPORTING
+        !iv_task_status TYPE /scwm/de_tostat
+        !it_open_tasks  TYPE /scwm/tt_to_det_mon
+      RETURNING
+        VALUE(rs_task)  TYPE /scwm/s_to_det_mon .
+    "!<p class="shorttext synchronized">Print Handling Unit</p>
+    METHODS print_handling_unit
+      RAISING
+        /iwbep/cx_mgw_tech_exception .
+    "!<p class="shorttext synchronized">Fill attribute MS_HU_ENTITY data</p>
+    METHODS set_task_to_hu_entity
+      IMPORTING
+        !is_open_task TYPE /scwm/s_to_det_mon .
+    ##NEEDED
+    "!<p class="shorttext synchronized">Handling Unit type validation</p>
+    METHODS validate_hutype
+      IMPORTING
+        !iv_lgnum  TYPE y20_cl_dass_hu_trolley_mpc=>ts_handlingunitent-lgnum
+          ##NEEDED
+        !iv_hutype TYPE /scwm/s_huhdr_int-letyp .
+    "!<p class="shorttext synchronized">Validate data and set attribute MS_HU_ENTITY</p>
+    METHODS validate_set_hu_enitity
+      IMPORTING
+        is_hu_entity TYPE y20_cl_dass_hu_trolley_mpc=>ts_handlingunitent
+      RAISING
+        /iwbep/cx_mgw_tech_exception .
+    "!<p class="shorttext synchronized">Get Item Text</p>
+    METHODS get_item_text_expanded
+      IMPORTING
+        it_key_tab       TYPE /iwbep/t_mgw_name_value_pair
+      RETURNING
+        VALUE(ro_result) TYPE REF TO data
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">OBSOLETE: Read Delivery Item Text</p>
+    METHODS read_delivery_item_text
+      IMPORTING
+        iv_id          TYPE tdid
+        is_docid       TYPE /scwm/s_docid_itemid
+      RETURNING
+        VALUE(rv_text) TYPE tline-tdline
+      RAISING
+        /iwbep/cx_mgw_tech_exception .
+    METHODS validate_huprocess_step
+      IMPORTING
+        iv_lgnum TYPE /scwm/lgnum
+        iv_procs TYPE /scwm/s_huhdr_int-procs
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+ENDCLASS.
+
+
+
+CLASS y20_cl_daht_hu_entity IMPLEMENTATION.
+
+
+  METHOD constructor.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Create instance of current class
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    mo_entity = io_entity.
+
+    mo_hu = y20_cl_odata_handling_unit=>get_instance( ).
+  ENDMETHOD.
+
+
+  METHOD execute_usercomm_on_hu.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Handle and execute user action on UI
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    io_data_provider->read_entry_data(
+      IMPORTING es_data = ms_user_command_handling_unit ).
+
+    CASE ms_user_command_handling_unit-usercommand.
+      WHEN y20_cl_dass_hu_trolley_mpc_ext=>ms_user_command-print.
+        print_handling_unit( ).
+    ENDCASE.
+
+    ro_entity = mo_entity->copy_data_to_ref( is_data = ms_user_command_handling_unit ).
+  ENDMETHOD.
+
+
+  METHOD get_handling_unit_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Return Handling Unit Entity
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    rs_result = ms_hu_entity.
+  ENDMETHOD.
+
+
+  METHOD get_hu_entity_key.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Determine keys of get request for HU
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    LOOP AT it_key_tab ASSIGNING FIELD-SYMBOL(<ls_key>).
+      CASE <ls_key>-name.
+        WHEN y20_cl_dass_hu_trolley_mpc_ext=>ms_field_name-lgnum.
+          rs_key_values-lgnum = <ls_key>-value.
+        WHEN y20_cl_dass_hu_trolley_mpc_ext=>ms_field_name-scanHU OR
+             y20_cl_dass_hu_trolley_mpc_ext=>ms_field_name-huident.
+          mo_entity->convert_to_format(
+            EXPORTING
+              iv_input  = <ls_key>-value
+            IMPORTING
+              ev_output = rs_key_values-huident ).
+      ENDCASE.
+    ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD get_hu_expanded_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Build HU data with expanded entities
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    DATA(ls_entity_keys) = get_hu_entity_key( it_key_tab ).
+
+    validate_set_hu_enitity( ls_entity_keys ).
+
+    DATA(ls_open_task) = get_open_task( iv_task_status = wmegc_to_open
+                                        it_open_tasks  = mo_entity->read_open_hutask_by_huident(
+                                                                 iv_lgnum = ms_hu_entity-lgnum
+                                                                 iv_huident = ms_hu_entity-huident ) ).
+
+    DATA(lv_def_queue) = zswl_cl_param=>read_const(
+        iv_lgnum     = ms_hu_entity-lgnum
+        iv_context   = zswl_if_param_c=>mc_deco
+        iv_parameter = zswl_if_param_c=>mc_deco_prepq ).
+    IF ls_open_task-queue <> lv_def_queue.
+      MESSAGE e077(y20_ui5) WITH ms_hu_entity-huident INTO DATA(lv_msg).
+      RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception( ).
+    ENDIF.
+
+    set_task_to_hu_entity( ls_open_task ).
+
+    ms_scanhu_hu_entity-scanhu_hunav = get_handling_unit_entity( ).
+    ro_entity = mo_entity->copy_data_to_ref( is_data =  ms_scanhu_hu_entity ).
+  ENDMETHOD.
+
+
+  METHOD get_open_task.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Read importing table of open task for task with status open
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF lines( it_open_tasks ) = 0.
+      RETURN.
+    ENDIF.
+
+    ASSIGN it_open_tasks[ tostat = iv_task_status ] TO FIELD-SYMBOL(<ls_task>).
+    IF sy-subrc = 0.
+      rs_task = <ls_task>.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD print_handling_unit.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Print Handling Unit
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    ms_hu_entity = ms_user_command_handling_unit-usercomm_hu.
+
+    mo_entity->validate_warehouse_number( iv_lgnum = ms_hu_entity-lgnum ).
+
+    mo_entity->read_hu_by_huident(
+      EXPORTING
+        iv_huident = ms_hu_entity-huident
+      IMPORTING
+        es_huhdr   = DATA(ls_huhdr) ).
+
+    CALL FUNCTION '/SCWM/PRINT_HU'
+      EXPORTING
+        it_huhdr          = VALUE /scwm/tt_huhdr_int( ( ls_huhdr ) )
+        iv_caller         = '1'
+      EXCEPTIONS
+        no_previous_print = 1
+        error_on_log_save = 2
+        previous_print    = 3
+        OTHERS            = 4.
+    IF sy-subrc <> 0.
+      ##NEEDED
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO DATA(lv_msg).
+      mo_entity->raise_exception( ).
+    ENDIF.
+
+    MESSAGE i013(y20_ui5) WITH ls_huhdr-huident INTO lv_msg.
+    mo_entity->mo_log->add_message( ).
+  ENDMETHOD.
+
+
+  METHOD set_task_to_hu_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Populate fields in attribute MS_HU_ENTITY
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    ms_hu_entity-warehousetask = is_open_task-tanum.
+    ms_hu_entity-warehouseorder = is_open_task-who.
+    ms_hu_entity-aarea = is_open_task-aarea.
+    ms_hu_entity-queue = is_open_task-queue.
+  ENDMETHOD.
+
+
+  METHOD validate_hutype.
+    " validate HU type is carton/box
+    " this must be clarified with Swisslog
+  ENDMETHOD.
+
+
+  METHOD validate_set_hu_enitity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Validate and set data in attribute MS_HU_ENTITY
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    mo_entity->validate_warehouse_number( is_hu_entity-lgnum ).
+
+    mo_entity->read_hu_by_huident(
+      EXPORTING
+        iv_huident = is_hu_entity-huident
+      IMPORTING
+        es_huhdr = DATA(ls_huhdr)
+        et_huitem = DATA(lt_huitem) ).
+
+*    validate_huprocess_step( iv_lgnum = is_hu_entity-lgnum
+*                             iv_procs = ls_huhdr-procs ).
+
+    validate_hutype( iv_lgnum = is_hu_entity-lgnum
+                     iv_hutype = ls_huhdr-letyp ).
+
+    ms_hu_entity-lgnum = is_hu_entity-lgnum.
+    ms_hu_entity-guid_hu = ls_huhdr-guid_hu.
+    ms_hu_entity-huident = ls_huhdr-huident.
+    ms_hu_entity-hutype = ls_huhdr-guid_hu.
+    ms_hu_entity-packmat-matid = ls_huhdr-pmat_guid.
+    ms_hu_entity-packmat-matnr = ls_huhdr-pmat.
+
+    TRY.
+        DATA(ls_huitm) = REF #( lt_huitem[ 1 ] ).
+        ms_hu_entity-product-matid = ls_huitm->matid.
+        ms_hu_entity-product-matnr = mo_entity->read_material_by_matid( ls_huitm->matid )-matnr.
+
+        ms_hu_entity-quantity-quan = ls_huitm->quan.
+        ms_hu_entity-quantity-unit = ls_huitm->meins.
+        ##NO_HANDLER
+      CATCH cx_sy_itab_line_not_found.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD y20_if_odata_entity~create_deep_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Execute POST request for a deep entity
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    CASE mv_execute_method.
+      WHEN y20_cl_dass_hu_trolley_mpc_ext=>mc_usercomm_hu.
+        ro_deep_entity = execute_usercomm_on_hu( io_data_provider = io_data_provider ).
+    ENDCASE.
+  ENDMETHOD.
+
+
+  METHOD y20_if_odata_entity~get_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description :
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    CASE mv_execute_method.
+      WHEN y20_cl_dass_hu_trolley_mpc_ext=>mc_usercomm_text.
+        ro_entity = get_item_text_expanded( it_key_tab = it_key_tab ).
+    ENDCASE.
+  ENDMETHOD.
+
+
+  METHOD y20_if_odata_entity~get_expanded_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Execute get request expanded entity for HU
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    CLEAR: er_entity, et_expanded_tech_clauses.
+    CASE mv_execute_method.
+      WHEN y20_cl_dass_hu_trolley_mpc_ext=>mc_techclause_scanhu_hunav.
+        er_entity = get_hu_expanded_entity( it_key_tab = it_key_tab ).
+        APPEND y20_cl_dass_hu_trolley_mpc_ext=>mc_techclause_scanhu_hunav TO et_expanded_tech_clauses.
+    ENDCASE.
+
+  ENDMETHOD.
+
+
+  METHOD y20_if_odata_entity~get_log.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Return log instance
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    ro_log = mo_entity->mo_log.
+  ENDMETHOD.
+
+
+  METHOD y20_if_odata_entity~set_execute_method.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Set execution method
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    mv_execute_method = iv_key.
+  ENDMETHOD.
+
+
+  METHOD get_item_text_expanded.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description : Get Item Text
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA ls_entity TYPE y20_cl_dass_hu_trolley_mpc=>ts_itemtextent.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    DATA(ls_entity_keys) = get_hu_entity_key( it_key_tab ).
+
+    DATA(lv_param) = zswl_cl_param=>read_const(
+        iv_lgnum     = ls_entity_keys-lgnum
+        iv_context   = zswl_if_param_c=>mc_ui5
+        iv_parameter = zswl_if_param_c=>mc_text_dlvitem_plie ).
+
+    ls_entity-lgnum = ls_entity_keys-lgnum.
+    ls_entity-huident = ls_entity_keys-huident.
+
+    ls_entity-text = mo_hu->read_dlv_item_text_by_huident(
+        iv_lgnum   = ls_entity_keys-lgnum
+        iv_huident = ls_entity_keys-huident
+        iv_id      = CONV #( lv_param ) ).
+
+    ro_result = mo_entity->copy_data_to_ref( is_data = ls_entity ).
+  ENDMETHOD.
+
+
+  METHOD read_delivery_item_text.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description :
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    CONSTANTS lc_object TYPE tdobject VALUE '/SCWM/DLVI'.
+    DATA: ls_head TYPE thead,
+          lt_line TYPE STANDARD TABLE OF tline,
+          lv_name TYPE  tdobname.
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+
+    lv_name = |{ is_docid-docid }{ is_docid-itemid }|.
+    CALL FUNCTION 'READ_TEXT'
+      EXPORTING
+        client                  = sy-mandt
+        id                      = iv_id
+        language                = sy-langu
+        name                    = lv_name
+        object                  = lc_object
+      IMPORTING
+        header                  = ls_head
+      TABLES
+        lines                   = lt_line
+      EXCEPTIONS
+        id                      = 1
+        language                = 2
+        name                    = 3
+        not_found               = 0
+        object                  = 5
+        reference_check         = 6
+        wrong_access_to_archive = 7
+        OTHERS                  = 8.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO DATA(lv_msg).
+      mo_entity->raise_exception( ).
+    ENDIF.
+
+    DELETE lt_line WHERE tdline IS INITIAL.
+    IF lines( lt_line ) = 0.
+      RETURN.
+    ENDIF.
+
+    rv_text = lt_line[ 1 ]-tdline.
+  ENDMETHOD.
+
+
+  METHOD validate_huprocess_step.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DAHT
+* Description :
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    ##NEEDED
+    DATA lv_msg  TYPE string.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    DATA(lt_procs) = zswl_cl_param=>read_const_list(
+                       iv_lgnum     = iv_lgnum
+                       iv_context   = zswl_if_param_c=>mc_hu_hdr
+                       iv_parameter = zswl_if_param_c=>mc_hu_procs_receive ).
+    TRY.
+        DATA(lv_zib2) = CONV /scwm/de_procs( lt_procs[ 2 ] ).
+      CATCH cx_sy_itab_line_not_found.
+        MESSAGE e024(y20_ui5) INTO lv_msg.
+        mo_entity->raise_exception( ).
+    ENDTRY.
+    IF iv_procs <> lv_zib2.
+      MESSAGE e032(y20_ui5) WITH iv_procs INTO lv_msg.
+      mo_entity->raise_exception( ).
+    ENDIF.
+  ENDMETHOD.
+
+ENDCLASS.

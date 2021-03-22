@@ -1,0 +1,25 @@
+<core:FragmentDefinition
+	xmlns:core="sap.ui.core"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:l="sap.ui.layout"
+	xmlns:table="sap.ui.table"
+	xmlns:form="sap.ui.layout.form"
+	xmlns="sap.m"
+	xmlns:acm="y20_outb_afpi_pcon.controller">
+	<VBox height="20rem" justifyContent="SpaceBetween">
+		<VBox height="45%" justifyContent="SpaceBetween">
+			<Text text=" "/>
+		</VBox>
+		<VBox height="55%" justifyContent="SpaceBetween">
+			<FlexBox class="sapUiTinyMargin sapUiMediumMarginTop" justifyContent="SpaceBetween">
+				<Text class="sapUiTinyMarginTop customTextSmall" text="{i18n>mainScreenFieldScanHU}"/>
+				<!-- <Input submit="onScanHUSubmit" class="customInput" id="scanHU"/> -->
+				<acm:ScanInput id="scanHU" submit="onScanHUSubmit" class="customInput">
+					<acm:attributes>
+						<core:CustomData key="inputmode" value="{ELEMENTS>/keyboard/inputmode}" writeToDom="true"/>
+					</acm:attributes>
+				</acm:ScanInput>
+			</FlexBox>
+		</VBox>
+	</VBox>
+</core:FragmentDefinition>

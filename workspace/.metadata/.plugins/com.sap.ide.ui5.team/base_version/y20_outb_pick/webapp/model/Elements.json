@@ -1,0 +1,11 @@
+{
+	"keyboard":
+	{
+		"inputmode": "none"
+	},
+	"btn_keyboard":
+	{
+		"pressed": false
+	}
+		
+}

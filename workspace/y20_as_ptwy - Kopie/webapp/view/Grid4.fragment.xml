@@ -1,0 +1,21 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout">
+	<VBox height="17rem">
+		<VBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Prod_No}" class="customTextSmall"/>
+					<Text text="{selectedRow>/Product/MATNR}" class="customTextLarge"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Prod_Text}" wrapping="false" class="customTextSmall"/>
+					<Text text="{  path: 'selectedRow>/Product/MAKTX',
+								formatter: '.formatter.longTextFormatter'
+							 }" wrapping="false" class="customTextMedium"/>
+				</items>
+			</FlexBox>
+		</VBox>
+	</VBox>
+
+</core:FragmentDefinition>

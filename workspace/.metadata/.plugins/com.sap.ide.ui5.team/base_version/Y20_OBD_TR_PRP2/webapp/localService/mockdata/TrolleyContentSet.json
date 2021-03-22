@@ -1,0 +1,36 @@
+[{
+	"Product": {
+		"MatID": "005056a1-7205-1eda-93ce-5519e58331ae",
+		"MatNR": "570851"
+	},
+	"Quantity": {
+		"Quan": 100,
+		"Unit": "PC"
+	},
+	"Lgnum": "TMPL",
+	"Trolley": "RF001",
+	"HU": {
+		"HUGuid": "005056a1-7205-1eea-9b8d-578701b99945",
+		"HUIdent": "2500000144",
+		"HUType": "PR1"
+	},
+	"Position": "4-8"
+},
+{
+	"Product": {
+		"MatID": "005056a1-7205-1eda-93ce-5519e58331ae",
+		"MatNR": "570851"
+	},
+	"Quantity": {
+		"Quan": 100,
+		"Unit": "PC"
+	},
+	"Lgnum": "TMPL",
+	"Trolley": "RF001",
+	"HU": {
+		"HUGuid": "005056a1-7205-1eea-9b8d-578701b99945",
+		"HUIdent": "2500000144",
+		"HUType": "PR1"
+	},
+	"Position": "1-3"
+}]

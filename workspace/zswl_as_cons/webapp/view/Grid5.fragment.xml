@@ -1,0 +1,7 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout">
+	<VBox height="20rem">
+			<ProgressIndicator id="pi_picks" class="sapUiSmallMarginBottom" percentValue="0" displayValue="0/1" showValue="true" state="None" />
+
+	</VBox>
+
+</core:FragmentDefinition>

@@ -1,0 +1,29 @@
+{
+	"btn_back": 
+	{
+		"enabled": true,
+		"visible": true
+	},
+	"btn_reprint": 
+	{
+		"enabled": false,
+		"visible": true
+	},
+	"btn_clearing": 
+	{
+		"enabled": false,
+		"visible": true
+	},
+	"btn_count":
+	{
+		"enabled": true,
+		"visible": true,
+		"text": ""
+	},
+	"qty_counted":
+	{
+		"value": 0
+	}
+
+		
+}

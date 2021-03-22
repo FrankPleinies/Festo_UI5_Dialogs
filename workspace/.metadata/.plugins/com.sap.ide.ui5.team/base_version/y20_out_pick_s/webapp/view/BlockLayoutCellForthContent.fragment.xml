@@ -1,0 +1,43 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:l="sap.ui.layout"
+	xmlns:table="sap.ui.table"
+	xmlns:form="sap.ui.layout.form"
+	xmlns="sap.m"
+	xmlns:acm="y20_out_pick_s.controller">
+	<VBox justifyContent="SpaceBetween" height="100%">
+
+		<FlexBox class="" justifyContent="SpaceBetween">
+			<Text class="customTextMedium sapUiTinyMarginTop" width="12rem" text="{i18n>scanSrc}"/>
+			<!-- <Input submit="onScanSourceSubmit" class="customInput" id="scanInput"/> -->
+			<acm:ScanInput id="scanInput" submit="onScanSourceSubmit" class="customInput">
+				<acm:attributes>
+					<core:CustomData key="inputmode" value="{ELEMENTS>/keyboard/inputmode}" writeToDom="true"/>
+				</acm:attributes>
+			</acm:ScanInput>
+		</FlexBox>
+		<FlexBox class="sapUiMediumMarginBottom" width="100%" justifyContent="SpaceBetween">
+			<items>
+				<Text class="customTextMedium" text="{i18n>warehouseOrder}" />
+				<Text class="customTextSmall" text="{modelToNav>/WHO}"/>
+			</items>
+		</FlexBox>
+		<FlexBox width="100%" justifyContent="SpaceBetween">
+			<items>
+				<Text class="customTextMedium" text="{i18n>warehouseTask}" />
+				<Text class="customTextSmall" text="{= ${modelToNav>/TANUM}*1}"/>
+			</items>
+		</FlexBox>
+		<FlexBox width="100%" justifyContent="SpaceBetween">
+			<items>
+				<Text class="customTextMedium" text="{i18n>destination}" />
+				<Text class="customTextSmall" text=""/>
+			</items>
+		</FlexBox>
+		<FlexBox justifyContent="SpaceBetween">
+			<Button class="customButton sapUiMediumMarginBottom" width="10rem" press="onChangeQueueSubmit" text="{i18n>skip}"/>
+		</FlexBox>
+
+
+	</VBox>
+</core:FragmentDefinition>

@@ -1,0 +1,71 @@
+[{
+	"Lgnum": "TMPL",
+	"ScanTrolley": "RF001",
+	"ScanTrolley_TrolleyNav": {
+		"__metadata": {
+			"id": "https://vi20pas.de.festo.net/sap/opu/odata/sap/Y20_EWM_DASS_HU_TROLLEY_SRV/TrolleySet(Lgnum='TMPL',Trolley='RF001')",
+			"uri": "https://vi20pas.de.festo.net/sap/opu/odata/sap/Y20_EWM_DASS_HU_TROLLEY_SRV/TrolleySet(Lgnum='TMPL',Trolley='RF001')",
+			"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.TrolleyEnt"
+		},
+		"LastHU": {
+			"__metadata": {
+				"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.HandlingUnit"
+			},
+			"HUGuid": "00000000-0000-0000-0000-000000000000",
+			"HUIdent": "",
+			"HUType": "",
+			"PackMat": {
+				"__metadata": {
+					"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.Product"
+				},
+				"MatID": "00000000-0000-0000-0000-000000000000",
+				"MatNR": ""
+			}
+		},
+		"Lgnum": "TMPL",
+		"Trolley": "RF001",
+		"ActivArea": "OHS1",
+		"WarehouseTask": "000000000000"
+	},
+	"ScanTrolley_TrolleyContentNav": {
+		"results": [{
+			"__metadata": {
+				"id": "https://vi20pas.de.festo.net/sap/opu/odata/sap/Y20_EWM_DASS_HU_TROLLEY_SRV/TrolleyContentSet(Lgnum='TMPL',Trolley='RF001',Position='')",
+				"uri": "https://vi20pas.de.festo.net/sap/opu/odata/sap/Y20_EWM_DASS_HU_TROLLEY_SRV/TrolleyContentSet(Lgnum='TMPL',Trolley='RF001',Position='')",
+				"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.TrolleyContentEnt"
+			},
+			"HU": {
+				"__metadata": {
+					"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.HandlingUnit"
+				},
+				"HUGuid": "005056a1-7205-1eea-9b8d-578701b99945",
+				"HUIdent": "2500000144",
+				"HUType": "PR1",
+				"PackMat": {
+					"__metadata": {
+						"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.Product"
+					},
+					"MatID": "005056a1-7205-1eda-93ce-5a52ac5c51f9",
+					"MatNR": ""
+				}
+			},
+			"Product": {
+				"__metadata": {
+					"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.Product"
+				},
+				"MatID": "005056a1-7205-1eda-93ce-5519e58331ae",
+				"MatNR": "570851"
+			},
+			"Quantity": {
+				"__metadata": {
+					"type": "Y20_EWM_DASS_HU_TROLLEY_SRV.Quantity"
+				},
+				"Quan": "100",
+				"Unit": "PC"
+			},
+			"Lgnum": "TMPL",
+			"Trolley": "RF001",
+			"Position": ""
+		}]
+	}
+}]

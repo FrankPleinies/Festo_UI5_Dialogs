@@ -1,0 +1,26 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:l="sap.ui.layout"
+	xmlns:table="sap.ui.table"
+	xmlns:form="sap.ui.layout.form"
+	xmlns="sap.m"
+	xmlns:acm="y20_out_pick_s.controller">
+	<VBox justifyContent="SpaceBetween" height="100%">
+		<FlexBox class="sapUiTinyMarginTop" justifyContent="SpaceBetween">
+			<Text class="customTextMedium" text="{i18n>destHUType}"/>
+			<Text class="customTextSmall" id="destHuType" />
+		</FlexBox>
+		<FlexBox class="sapUiLargeMarginTop" justifyContent="SpaceBetween">
+			<Text width="12rem" class="customTextMedium sapUiTinyMarginTop" text="{i18n>scanDestShort}"/>
+			<!-- <Input submit="onScanDestPosSubmit" id="scanDestPosInput" class="customInput" /> -->
+			<acm:ScanInput id="scanDestPosInput" submit="onScanDestPosSubmit" class="customInput">
+				<acm:attributes>
+					<core:CustomData key="inputmode" value="{ELEMENTS>/keyboard/inputmode}" writeToDom="true"/>
+				</acm:attributes>
+			</acm:ScanInput>
+		</FlexBox>
+		<FlexBox direction="RowReverse" class="sapUiLargeMarginTop" justifyContent="SpaceBetween">
+			<Button id="fullDropBtn" press="onFullDropPressed" class="customButton sapUiMediumMarginBottom" width="8rem" text="{i18n>fullDrop}"/>
+		</FlexBox>
+	</VBox>
+</core:FragmentDefinition>

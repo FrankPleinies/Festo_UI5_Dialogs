@@ -1,0 +1,49 @@
+<core:FragmentDefinition 
+	xmlns:core="sap.ui.core" 
+	xmlns:mvc="sap.ui.core.mvc" 
+	xmlns:l="sap.ui.layout" 
+	xmlns:table="sap.ui.table"
+	xmlns:form="sap.ui.layout.form" 
+	xmlns="sap.m">
+	<VBox height="45rem" justifyContent="SpaceBetween">
+		<VBox height="90%">
+			<FlexBox alignItems="Start" justifyContent="Start">
+				<table:Table id="uiTableOBD" 
+					rows="{modelBinOBDDestinations>/results}" 
+					selectionMode="None"
+					enableColumnReordering="false" 
+					width="auto" 
+					class="sapUiSmallMarginTop">
+					<table:columns>
+						<table:Column
+							sortProperty="DocNo">
+							<Label text="{i18n>tableOBD_Col1}"/>
+							<table:template>
+								<Text text="{modelBinOBDDestinations>DocNo}" />
+							</table:template>
+						</table:Column>
+						<table:Column
+							sortProperty="HuIdent">
+							<Label text="{i18n>tableOBD_Col2}"/>
+							<table:template>
+								<Text text="{modelBinOBDDestinations>HuIdent}" />
+							</table:template>
+						</table:Column>
+						<table:Column
+							sortProperty="Destination">
+							<Label text="{i18n>tableOBD_Col3}"/>
+							<table:template>
+								<Text text="{modelBinOBDDestinations>Destination}" />
+							</table:template>
+						</table:Column>
+					</table:columns>
+				</table:Table>
+			</FlexBox>	
+		</VBox>
+		<VBox height="10%" justifyContent="Start">
+			<FlexBox class="sapUiMediumMarginTop" justifyContent="SpaceBetween">
+				<Button class="customButton" press="onClearPressed" text="{i18n>mainScreenBtnClear}" width="7rem"/>
+			</FlexBox>		
+		</VBox>		
+	</VBox>
+</core:FragmentDefinition>

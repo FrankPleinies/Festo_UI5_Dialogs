@@ -1,0 +1,21 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:l="sap.ui.layout"
+	xmlns:table="sap.ui.table"
+	xmlns:form="sap.ui.layout.form"
+	xmlns="sap.m">
+	<VBox justifyContent="Center">
+
+		<FlexBox class="sapUiTinyMargin" justifyContent="SpaceBetween">
+			<Text class="customTextLarge" id="firstSectionThird" text="{modelTrolleyNav>/TROLLEY}"/>
+			<Text class="customTextLarge" id="firstSectionThirdPos" text="{modelTrolleyNav>/LOGPOS}"/>
+		</FlexBox>
+		<FlexBox width="100%" justifyContent="Center">
+			<items>
+				<Image width="35rem" class="customImage" src="./images/Trolley.png" />
+				<Image width="auto" class="customImageOverlay" src="./images/Item_relevant.png" />
+			</items>
+		</FlexBox>
+		<!-- <FlexBox class="" width="100%" justifyContent="Center"><Button class="customButton" press="onPrintPressed" width="10rem" text="Info"/></FlexBox>-->
+	</VBox>
+</core:FragmentDefinition>

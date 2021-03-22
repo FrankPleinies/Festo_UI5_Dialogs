@@ -1,0 +1,11 @@
+<mvc:View controllerName="y20_deco_inb_r.controller.Messages"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc" id="messagesView">
+
+    <HBox>
+        <Button icon="sap-icon://arrow-top" text="{i18n>exit}" press="onExitPressed" class="customFooterButton"/>
+        <HBox width="85%" id="messageHBox" justifyContent="Center" alignItems="Stretch" alignContent="Stretch" class="sapUiSmallMarginEnd"/>
+        <Button icon="sap-icon://alert" text="{= ${message>/}.length }" visible="true" class="sapUiSmallMarginEnd customFooterButton" press="onMessagePopoverPress"/>
+    </HBox>
+
+</mvc:View>

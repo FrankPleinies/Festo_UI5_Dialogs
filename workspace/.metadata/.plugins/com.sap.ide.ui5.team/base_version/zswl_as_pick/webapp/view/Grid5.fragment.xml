@@ -1,0 +1,68 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout">
+	<VBox height="17rem">
+		<VBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Order_PoolName}" class="customTextSmall"/>
+					<Text text="{OrderData>/PoolName}" class="customTextSmall"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Order_PoolDate}" wrapping="false" class="customTextSmall"/>
+					<Text text="{OrderData>/PoolDate}" wrapping="false" class="customTextSmall"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Order_ERPDoc}" wrapping="false" class="customTextSmall"/>
+					<Text text="{OrderData>/ERPDlvNo}" wrapping="false" class="customTextSmall"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Order_ERPItem}" wrapping="false" class="customTextSmall"/>
+					<Text text="{OrderData>/ERPDlvItem}" wrapping="false" class="customTextSmall"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Order_EWMDoc}" wrapping="false" class="customTextSmall"/>
+					<Text text="{OrderData>/EWMDlvNo}" wrapping="false" class="customTextSmall"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Order_EWMItem}" wrapping="false" class="customTextSmall"/>
+					<Text text="{OrderData>/EWMDlvItem}" wrapping="false" class="customTextSmall"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Order_Qty}" wrapping="false" class="customTextSmall"/>
+					<Text class="customTextSmall" text="{= ${OrderData>/ItemQty/Quan}*1} {OrderData>/ItemQty/Unit}"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Order_WHO}" wrapping="false" class="customTextSmall"/>
+					<Text text="{WarehouseTask>/Who}" wrapping="false" class="customTextSmall"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Order_WT}" wrapping="false" class="customTextSmall"/>
+					<Text text="{WarehouseTask>/Tanum}" wrapping="false" class="customTextSmall"/>
+				</items>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<items>
+					<Text text="{i18n>Form_Order_ASTask}" wrapping="false" class="customTextSmall"/>
+					<Text text="{WarehouseTask>/ASTask}" wrapping="false" class="customTextSmall"/>
+				</items>
+			</FlexBox>
+
+		</VBox>
+	</VBox>
+
+</core:FragmentDefinition>

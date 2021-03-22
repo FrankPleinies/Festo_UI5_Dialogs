@@ -1,0 +1,335 @@
+class Y20_CL_IM_CORE_CR_POST definition
+  public
+  final
+  create public .
+
+public section.
+
+  interfaces /SCWM/IF_EX_CORE_CR_POST .
+  interfaces IF_BADI_INTERFACE .
+protected section.
+private section.
+
+  methods CALC_EXP_DATE_RETURNS_MAT
+    importing
+      !IV_LGNUM type /SCWM/LGNUM
+      !IV_MATID type /SCWM/DE_MATID
+      !IV_WDATU type /SCWM/LVS_WDATU
+    returning
+      value(RV_VFDAT) type /SCWM/SLED .
+  methods UPDATE_QUAN_FILED_PTWY
+    importing
+      !IV_LGNUM type /SCWM/LGNUM
+      !IT_LTAP_VB type /SCWM/TT_LTAP_VB .
+ENDCLASS.
+
+
+
+CLASS Y20_CL_IM_CORE_CR_POST IMPLEMENTATION.
+
+
+  METHOD /scwm/if_ex_core_cr_post~post.
+************************************************************************
+* Company : Swisslog AG *
+* Package : Y20_CORE_ENH
+* Description :
+************************************************************************
+* REVISIONS:
+* --------- *
+* Ver. ¦Date ¦Author ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0 ¦2020-05-07¦Andriyan Yordanov ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+*      update_quan_filed_ptwy( EXPORTING
+*                                 iv_lgnum   = iv_lgnum
+*                                 it_ltap_vb = it_ltap_vb ).
+
+  ENDMETHOD.
+
+
+METHOD calc_exp_date_returns_mat.
+  DATA: ls_mat_global      TYPE /scwm/s_material_global,
+        lv_dummy_timestamp TYPE timestamp,
+        lt_date_time       TYPE /scwm/tt_tstmp_date_time,
+        lv_seconds         TYPE i.
+
+  CLEAR rv_vfdat.
+
+  TRY.
+      CALL FUNCTION '/SCWM/MATERIAL_READ_SINGLE'
+        EXPORTING
+          iv_matid      = iv_matid
+          iv_lgnum      = iv_lgnum
+        IMPORTING
+          es_mat_global = ls_mat_global.
+
+    CATCH /scwm/cx_md.
+  ENDTRY.
+
+  ls_mat_global-shelf_life_dur  = ls_mat_global-shelf_life_dur / 2.
+
+  CALL FUNCTION '/SAPAPO/DURATION_GET_SECONDS'
+    EXPORTING
+      iv_duration = ls_mat_global-shelf_life_dur
+    IMPORTING
+      ev_seconds  = lv_seconds.
+
+  CALL FUNCTION '/SAPAPO/TIMESTAMP_ADD'
+    EXPORTING
+      iv_timestamp        = iv_wdatu
+      iv_duration_integer = lv_seconds
+    IMPORTING
+      ev_timestamp        = lv_dummy_timestamp
+    EXCEPTIONS
+      out_of_range        = 1
+      invalid_parameter   = 2
+      OTHERS              = 3.
+
+  IF sy-subrc = 0.
+
+    CALL FUNCTION '/SCWM/CONVERT_TIMESTAMP'
+      EXPORTING
+        iv_lgnum       = iv_lgnum
+        it_timestamp   = VALUE /scwm/tt_timestamp( ( lv_dummy_timestamp ) )
+      IMPORTING
+        et_date_time   = lt_date_time
+      EXCEPTIONS
+        input_error    = 1
+        data_not_found = 2
+        OTHERS         = 3.
+
+    IF sy-subrc = 0.
+
+      READ TABLE lt_date_time INDEX 1 ASSIGNING FIELD-SYMBOL(<ls_date_time>).
+      IF sy-subrc = 0 AND <ls_date_time> IS ASSIGNED.
+        rv_vfdat = <ls_date_time>-date.
+      ENDIF.
+
+    ENDIF.
+
+  ENDIF.
+
+ENDMETHOD.
+
+
+  METHOD update_quan_filed_ptwy.
+************************************************************************
+* Company : Swisslog AG *
+* Package : Y20_CORE_ENH
+* Description :
+************************************************************************
+* REVISIONS:
+* --------- *
+* Ver. ¦Date ¦Author ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0 ¦2020-05-07¦Andriyan Yordanov ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA:
+      ls_eew_item TYPE /scdl/incl_eew_dlv_item_str,
+      ls_item     TYPE /scwm/dlv_item_out_prd_str,
+      ls_header   TYPE /scwm/dlv_header_out_prd_str,
+      lo_log      TYPE REF TO y20_cl_log.
+
+    IF abap_false  = zswl_cl_switch=>get_switch_state( iv_lgnum  = iv_lgnum
+                                                       iv_ipnum  = zswl_if_switch_c=>mc_ewm1166 ).
+
+      RETURN.
+    ENDIF.
+
+    LOOP AT it_ltap_vb ASSIGNING FIELD-SYMBOL(<ls_ltap_vb>)
+                                                WHERE trart   =  wmegc_trart_put AND
+                                                      rdoccat = /scdl/if_dl_doc_c=>sc_doccat_inb_prd.
+
+      IF lo_log IS NOT BOUND.
+        lo_log = y20_cl_log=>start_log( iv_extid     = <ls_ltap_vb>-act_type
+                                        iv_object    = wmegc_apl_object_wme
+                                        iv_balsubobj = wmegc_apl_subob_whs_task ).
+      ENDIF.
+
+      CHECK <ls_ltap_vb>-guid_stock IS NOT INITIAL AND
+            <ls_ltap_vb>-dguid_hu IS NOT INITIAL.
+
+      " we should set a waight from item
+      IF <ls_ltap_vb>-rdocid IS NOT INITIAL AND
+         <ls_ltap_vb>-ritmid IS NOT INITIAL.
+
+        TRY.
+            /scwm/cl_dlv_management_prd=>get_instance( )->query(
+              EXPORTING
+                it_docid        = VALUE #( ( docid  = <ls_ltap_vb>-rdocid
+                                             itemid = <ls_ltap_vb>-ritmid
+                                             doccat = /scdl/if_dl_doc_c=>sc_doccat_inb_prd ) )
+                is_read_options = VALUE #( item_part_select = abap_true )
+                is_include_data = VALUE #( item_refdoc = abap_true )
+             IMPORTING
+                et_headers      = DATA(lt_dlv_headers)
+                et_items        = DATA(lt_dlv_items)
+                eo_message      = DATA(lo_msg) ).
+          CATCH /scdl/cx_delivery ##NO_HANDLER.
+        ENDTRY.
+
+        LOOP AT lo_msg->get_messages( ) ASSIGNING FIELD-SYMBOL(<ls_msg>) WHERE msgty CA wmegc_severity_eax. "#EC CI_STDSEQ
+          MESSAGE ID <ls_msg>-msgid TYPE <ls_msg>-msgty NUMBER <ls_msg>-msgno
+            WITH <ls_msg>-msgv1 <ls_msg>-msgv2 <ls_msg>-msgv3 <ls_msg>-msgv4
+            INTO DATA(lv_dummy_msg).
+          lo_log->add_message( ).
+        ENDLOOP.
+      ENDIF.
+
+      TRY.
+
+          ls_item   = lt_dlv_items[ 1 ].
+          ls_header = lt_dlv_headers[ 1 ].
+
+          READ TABLE ls_item-refdoc WITH KEY refdoccat = /scwm/if_doc_c=>sc_refdoccat_po ASSIGNING FIELD-SYMBOL(<ls_purchase_order>).
+
+          IF sy-subrc = 0 AND <ls_purchase_order> IS ASSIGNED.
+            TRY.
+                y20_cl_quantupdate=>set_purchaseorder(
+                  EXPORTING
+                    iv_guid_parent         = <ls_ltap_vb>-dguid_hu
+                    iv_guid_stock          = <ls_ltap_vb>-guid_stock
+                    iv_purchase_order      = CONV #( <ls_purchase_order>-refdocno )
+                    iv_purchase_order_item = CONV #( <ls_purchase_order>-refitemno )
+                  IMPORTING
+                    ev_success             = DATA(lv_success_flg) ).
+              CATCH /scwm/cx_lock.
+                lo_log->add_message( ).
+            ENDTRY.
+          ENDIF.
+
+          IF lv_success_flg = abap_true.
+            MESSAGE i024(y20_core_message) WITH <ls_ltap_vb>-tanum  INTO DATA(lv_msg_dummy).
+            lo_log->add_message( ).
+          ELSE.
+            MESSAGE w025(y20_core_message) WITH <ls_ltap_vb>-tanum  INTO lv_msg_dummy.
+            lo_log->add_message( ).
+          ENDIF.
+
+        CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+      ENDTRY.
+
+      TRY.
+          ls_eew_item = lt_dlv_items[ 1 ]-eew.
+
+          TRY .
+              y20_cl_quantupdate=>set_single_weight( EXPORTING
+                                                         iv_guid_parent = <ls_ltap_vb>-dguid_hu
+                                                         iv_guid_stock  = <ls_ltap_vb>-guid_stock
+                                                         iv_zzsingleweight =  ls_eew_item-zzsingleweight
+                                                         iv_uom            =  ls_eew_item-zzsingleweight_u
+                                                      IMPORTING
+                                                         ev_success        = lv_success_flg ).
+            CATCH /scwm/cx_lock.
+              lo_log->add_message( ).
+          ENDTRY.
+
+          IF lv_success_flg = abap_true.
+            MESSAGE i017(y20_core_message) WITH <ls_ltap_vb>-tanum  INTO lv_msg_dummy.
+            lo_log->add_message( ).
+          ELSE.
+            MESSAGE w018(y20_core_message) WITH <ls_ltap_vb>-tanum  INTO lv_msg_dummy.
+            lo_log->add_message( ).
+          ENDIF.
+
+        CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+      ENDTRY.
+
+      TRY .
+          y20_cl_quantupdate=>set_initialqty( EXPORTING
+                                                   iv_guid_parent      = <ls_ltap_vb>-dguid_hu
+                                                   iv_guid_stock       = <ls_ltap_vb>-guid_stock
+                                                   iv_zzinitialqnty    = <ls_ltap_vb>-vsolm
+                                                   iv_zzinitialqnty_u  = <ls_ltap_vb>-meins
+                                              IMPORTING
+                                                   ev_success        = lv_success_flg ).
+
+        CATCH /scwm/cx_lock.
+          lo_log->add_message( ).
+      ENDTRY.
+
+      IF lv_success_flg = abap_true.
+        MESSAGE i015(y20_core_message) WITH <ls_ltap_vb>-tanum INTO lv_msg_dummy.
+        lo_log->add_message( ).
+      ELSE.
+        MESSAGE w016(y20_core_message) WITH <ls_ltap_vb>-tanum  INTO lv_msg_dummy.
+        lo_log->add_message( ).
+      ENDIF.
+
+      IF zswl_cl_switch=>get_switch_state( iv_lgnum  = iv_lgnum
+                                           iv_ipnum  = zswl_if_switch_c=>mc_customer_returns ) AND ls_item-itemtype = zswl_cl_param=>read_const(
+                                                                                                                        iv_lgnum     = iv_lgnum
+                                                                                                                        iv_context = zswl_if_param_c=>mc_core
+                                                                                                                        iv_parameter = zswl_if_param_c=>mc_cust_returns_itm_type ).
+        TRY.
+            y20_cl_quantupdate=>set_returns(
+              EXPORTING
+                iv_guid_parent = <ls_ltap_vb>-dguid_hu
+                iv_guid_stock  = <ls_ltap_vb>-guid_stock
+                iv_zzreturn    = abap_true
+              IMPORTING
+                ev_success     = lv_success_flg ).
+
+          CATCH /scwm/cx_lock.
+            lo_log->add_message( ).
+        ENDTRY.
+
+        IF lv_success_flg = abap_true.
+          MESSAGE i020(y20_core_message) WITH <ls_ltap_vb>-tanum INTO lv_msg_dummy.
+          lo_log->add_message( ).
+        ELSE.
+          MESSAGE w021(y20_core_message) WITH <ls_ltap_vb>-tanum  INTO lv_msg_dummy.
+          lo_log->add_message( ).
+        ENDIF.
+
+        DATA(lv_vfdat) = calc_exp_date_returns_mat(
+               iv_lgnum = iv_lgnum
+              iv_matid = <ls_ltap_vb>-matid
+              iv_wdatu = <ls_ltap_vb>-wdatu ).
+
+        IF lv_vfdat IS NOT INITIAL.
+
+          TRY.
+              y20_cl_quantupdate=>set_expiration_date(
+                EXPORTING
+                  iv_guid_parent    = <ls_ltap_vb>-dguid_hu
+                  iv_guid_stock     = <ls_ltap_vb>-guid_stock
+                  iv_vfdat          = lv_vfdat
+                IMPORTING
+                  ev_success        = lv_success_flg ).
+
+            CATCH /scwm/cx_lock.
+              lo_log->add_message( ).
+          ENDTRY.
+
+          IF lv_success_flg = abap_true.
+            MESSAGE i022(y20_core_message) WITH <ls_ltap_vb>-tanum INTO lv_msg_dummy.
+            lo_log->add_message( ).
+          ELSE.
+            MESSAGE w023(y20_core_message) WITH <ls_ltap_vb>-tanum  INTO lv_msg_dummy.
+            lo_log->add_message( ).
+          ENDIF.
+
+        ENDIF.
+
+      ENDIF.
+
+    ENDLOOP.
+
+    IF lo_log IS BOUND.
+      lo_log->end_log( ).
+    ENDIF.
+
+  ENDMETHOD.
+ENDCLASS.

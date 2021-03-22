@@ -1,0 +1,18 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout" xmlns:table="sap.ui.table">
+	<VBox height="23rem">
+					<VBox id="GridDisplay" class="sapUiMediumMarginTop" alignContent="End" width="100%" height="75%" alignItems="Center" justifyContent="Center">
+						<items>
+						</items>
+					</VBox>
+					<VBox height="25%">
+						<FlexBox justifyContent="Begin" alignItems="Begin" class="sapUiMediumMarginTop">
+							<items>
+								<Button text="{i18n>BtnHUComplete}" enabled="{ELEMENTS>/btn_hucomplete/enabled}" visible="{ELEMENTS>/btn_hucomplete/visible}" id="btn_hucomplete" press="onPressHUComplete" class="sapUiSmallMargin customButton"/>
+								<Button text="{i18n>BtnChgLayout}" enabled="{ELEMENTS>/btn_chglayout/enabled}" visible="{ELEMENTS>/btn_chglayout/visible}" id="btn_hchglayout" press="onPressChgLayout" class="sapUiSmallMargin customButton"/>
+							</items>
+						</FlexBox>
+					</VBox>
+
+	</VBox>
+
+</core:FragmentDefinition>

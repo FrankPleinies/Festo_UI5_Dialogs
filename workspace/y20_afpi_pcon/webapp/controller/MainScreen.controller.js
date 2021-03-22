@@ -1,0 +1,703 @@
+sap.ui.define([
+	"./Base.controller",
+	"../model/formatter",
+	"sap/ui/model/json/JSONModel",
+	"sap/ui/core/Fragment",
+	"sap/ui/core/BusyIndicator"
+], function (BaseController, formatter, JSONModel, Fragment, BusyIndicator) {
+	"use strict";
+
+	return BaseController.extend("y20_outb_afpi_pcon.controller.MainScreen", {
+		formatJson: "&$format=json",
+		formatter: formatter,
+
+		//################ Public APIs ###################
+
+		/**
+		* onInit
+		*/
+		onInit: function () {
+			//this.getView().addStyleClass(sap.ui.Device.support.touch ? "sapUiSizeCozy" : "sapUiSizeCompact");
+			this.getView().addStyleClass("sapUiSizeCozy");
+			var isTouch = sap.ui.Device.support.touch;
+			isTouch && this.getView().byId("BlockLayout").addStyleClass("tablet-transform");
+
+			//TODO: Header: Dialog name, user, date and the current used workstation
+			this.setCurrentLoggedInUser();
+
+			//Set empty model
+			// Entity: ScanSourcHU
+			this.getView().setModel(new JSONModel(null), "modelSourceHU");
+			// Entity: WarehTaskToPcon
+			this.getView().setModel(new JSONModel(null), "modelWarehouseOrder");
+			// Entity: DestBin
+			this.getView().setModel(new JSONModel(null), "modelDestinationBin");
+			// Entity: BinPhysicalStock
+			this.getView().setModel(new JSONModel(null), "modelStorageBin");
+
+			//Set the Message model
+			this.initMessageModel();
+
+			//Set the jsonModel for all Elements of the screen
+			this.initElementsModel();
+
+
+			// clear screen
+			this._clearScreen(true);
+		},
+
+		/**
+		* onAfterRendering
+		*/
+		onAfterRendering: function (oEvent) {
+
+
+			 const isTouch = sap.ui.Device.support.touch;
+			 const reg = RegExp('customButton');
+			 setTimeout(() => {
+			 	const btnArr = Array.from(document.getElementsByTagName("button")).filter(button => reg.test(button.className))
+			 	isTouch && btnArr.forEach(button => window.setTimeout(() => button.classList.add("customTabletButton"), 0))
+			 	isTouch && this.byId("firstSectionText").addStyleClass("customTextTablet")
+			 	isTouch && this.byId("secondCellTextOne").addStyleClass("sapUiSmallMarginTop")
+				isTouch && this.byId("secondCellTextTwo").addStyleClass("customTextTablet")
+			 	this.byId("fullDropBtn").addStyleClass("sapUiLargeMarginEnd")
+			 }, 0)
+			  //this.setConsts()
+
+			// set focus on scan field
+			this.setFocusOnField("scanHU");
+		},
+
+		onShowKeyboard: function (oEvent) {
+			var oModel = this.getElementsModel();
+			var propertyString = "/keyboard" + "/inputmode";
+
+			this.toggleButton(oEvent.mParameters.id, oEvent.mParameters.pressed);
+			if (this.getView().byId("scanHU")) {
+				this.getView().byId("scanHU").setEditable(false);
+				this.getView().byId("scanHU").setEditable(true);
+			}				
+			if (this.getView().byId("scanDestination")) {
+				this.getView().byId("scanDestination").setEditable(false);
+				this.getView().byId("scanDestination").setEditable(true);
+			}
+			if(oEvent.mParameters.pressed) {
+				oModel.setProperty(propertyString, "text");
+				oModel.refresh(true);
+			} else {
+				oModel.setProperty(propertyString, "none");
+				oModel.refresh(true);
+			}
+		},
+
+		/**
+		* onScanHUSubmit
+		* OData request
+		*/
+		onScanHUSubmit: function onScanHUSubmit(oEvent) {
+			var _this = this;
+
+			// scanned HU
+			var scannedHU = oEvent.getSource().getValue();
+			if (scannedHU === null || scannedHU.length == 0) {
+				// no scanned value
+				_this.showMessage("warning",
+					_this.getResourceBundle().getText("SCAN_HU"),
+					_this.getResourceBundle().getText("SCAN_HU_MISSING"));
+				return;
+			}
+
+			// clear screen
+			_this._clearScreen(false);
+
+			// show scannend value in title bar
+			//_this.byId("sourceHUTitle").setText(scannedHU);
+
+			var sWarehouse = "TMPL"; 	// TODO: get from global parameter
+
+			// OData Model
+			var oModel = new sap.ui.model.odata.v2.ODataModel("/sap/opu/odata/sap/Y20_EWM_OUT_AFPI_PCON_SRV", true);
+			var setInfo = "(Lgnum='".concat(sWarehouse, "',HUIdent='").concat(scannedHU, "')");
+
+			BusyIndicator.show();
+			oModel.read("/ScanSourcHUSet" + setInfo, {
+				useBatch: false,
+				urlParameters: {
+					"$expand": "WarehTaskToPcon"
+				},
+				success: function (oData, oResponse) {
+					try {
+						// create model from received data
+						_this.createModelsFromData_HU(oData);
+						BusyIndicator.hide();
+						_this.handleMessageResponse(oResponse);
+
+						// add success message
+						var successmsg = _this.getResourceBundle().getText("SCAN_HU_SUCCESS") + " " + scannedHU;
+						_this.addMessage("info", _this.getResourceBundle().getText("SCAN_HU"), successmsg, false);
+
+						// check destination bin
+						_this.checkDestinationBin();
+
+					} catch (err) {
+						console.log(err);
+						BusyIndicator.hide();
+						_this.addMessage("error", _this.getResourceBundle().getText("SCAN_HU"), err.message, true);
+					}
+				},
+
+				error: function (oError) {
+					console.log(oError);
+					BusyIndicator.hide();
+					_this.getView().byId("scanDestination").setValue("");
+					_this.handleMessageResponse(oError);
+				}
+			});
+		},
+
+		/**
+		* createModelsFromData_HU
+		*/
+		createModelsFromData_HU: function createModelsFromData_HU(data) {
+			// Entity: ScanSourcHU
+			var dataScanSourcHU = data; //.ScanSourcHU;
+			var jsonModelScanSourcHU = new JSONModel(dataScanSourcHU);
+			this.getView().setModel(jsonModelScanSourcHU, "modelSourceHU");
+
+			// Entity: WarehTaskToPcon
+			var dataWarehTaskToPcon = data.WarehTaskToPcon;
+			var jsonModelWarehTaskToPcon = new JSONModel(dataWarehTaskToPcon);
+			this.getView().setModel(jsonModelWarehTaskToPcon, "modelWarehouseOrder");
+		},
+
+		/**
+		* checkDestinationBin
+		* If there is more than one storage bin available 
+		* then the system should display the bin where the last consolidation happened. 
+		* This is the bin with the last WT to PCON for the same ODO.
+		*/
+		checkDestinationBin: function checkDestinationBin() {
+			// if we have in the response Nlpla <> null Then do the POST request 
+			var jsonModelScanSourcHU = this.getView().getModel("modelSourceHU");
+			if (jsonModelScanSourcHU !== undefined) {
+				var dataScanSourcHU = jsonModelScanSourcHU.getData();
+				if (dataScanSourcHU !== undefined && dataScanSourcHU.WarehTaskToPcon.Nlpla.length > 0) {
+					var sNlpla = dataScanSourcHU.WarehTaskToPcon.Nlpla;
+					// POST request WarehTaskToPconSet
+					this.getWarehTaskData(sNlpla);
+					// enable button for changing the destination bin
+					this._enableBtnChgDst(true);
+				} else {
+					// disable button for changing the destination bin
+					this._enableBtnChgDst(false);
+				}
+			}
+
+			// next scan
+			this.byId("scanDestination").setValue("");
+			this.setFocusOnField("scanDestination");
+		},
+
+		/**
+		* getWarehTaskData
+		* OData request
+		* POST Request WT (load the data for the current bin) 
+		* /sap/opu/odata/sap/Y20_EWM_OUT_AFPI_PCON_SRV/WarehTaskToPconSet
+		*/
+		getWarehTaskData: function getWarehTaskData(sNlpla) {
+			var _this = this;
+			var sWarehouse = "TMPL"; 	// TODO: get from global parameter
+			var sNlber = "";
+
+			var jsonModelScanSourcHU = _this.getView().getModel("modelSourceHU");
+			if (jsonModelScanSourcHU !== undefined) {
+				var dataScanSourcHU = jsonModelScanSourcHU.getData();
+				if (dataScanSourcHU !== undefined && dataScanSourcHU.Nlber.length > 0) {
+					sNlber = dataScanSourcHU.Nlber;
+				}
+			}
+
+			var jsonModelWarehTaskToPcon = _this.getView().getModel("modelWarehouseOrder");
+			var dataWarehTaskToPcon = jsonModelWarehTaskToPcon.getData();
+
+			var requestBody = {
+				"Lgnum": sWarehouse,
+				"Nlber": sNlber,
+				"Nlpla": sNlpla,
+				"BinType": dataWarehTaskToPcon.BinType,
+				"HUIdent": dataWarehTaskToPcon.HUIdent,
+				"WarehouseTask": dataWarehTaskToPcon.WarehouseTask,
+				"DocNo": dataWarehTaskToPcon.DocNo,
+				"DocPoolName": dataWarehTaskToPcon.DocPoolName,
+				"Who": dataWarehTaskToPcon.Who,
+				"Procty": dataWarehTaskToPcon.Procty,
+				"HuTrolleyPosition": dataWarehTaskToPcon.HuTrolleyPosition,
+				"Nltyp": dataWarehTaskToPcon.Nltyp,
+				"DestBin": {
+					"Lgnum": "",
+					"Nlber": "",
+					"Nlpla": "",
+					"Nltyp": "",
+					"HUIdent": "",
+					"Aisle": "",
+					"Stack": "",
+					"LvlV": "",
+					"Lgpla_Scan": "",
+					"Tanum": "",
+					"BinPhysicalStock": {
+						"results": []
+					}
+				}
+			};
+
+			// OData Model
+			var oModel = new sap.ui.model.odata.v2.ODataModel("/sap/opu/odata/sap/Y20_EWM_OUT_AFPI_PCON_SRV", true);
+			BusyIndicator.show();
+
+			oModel.create("/WarehTaskToPconSet", requestBody, {
+				useBatch: false,
+				success: function (oData, oResponse) {
+					try {
+						// create model from received data
+						_this.createModelsFromData_WT(oData);
+						BusyIndicator.hide();
+						//_this.handleMessageResponse(oResponse);
+
+						// POST request DestBinSet
+						_this.getDestBinData();
+
+					} catch (err) {
+						console.log(err);
+						BusyIndicator.hide();
+						_this.addMessage("error", _this.getResourceBundle().getText("SCAN_DEST"), err.message, true);
+					}
+				},
+
+				error: function (oError) {
+					console.log(oError);
+					BusyIndicator.hide();
+					_this.handleMessageResponse(oError);
+				}
+			});
+		},
+
+		/**
+		* createModelsFromData_WT
+		*/
+		createModelsFromData_WT: function createModelsFromData_WT(data) {
+
+			// Entity: WarehTaskToPcon
+			var dataWarehTaskToPcon = data;
+			var jsonModelWarehTaskToPcon = new JSONModel(dataWarehTaskToPcon);
+			this.getView().setModel(jsonModelWarehTaskToPcon, "modelWarehouseOrder");
+
+			//this.byId("binTitle").setText(dataWarehTaskToPcon.Nlpla);
+			//this.byId("warehouseOrderTitle").setText(dataWarehTaskToPcon.Who);
+
+			// TEST
+			// storage bin stack
+			this.buildStorageBin();
+			this.byId("shelfDisplay").setVisible(true);
+		},
+
+		/**
+		* getDestBinData
+		* OData request
+		* POST Request to get the Phys. Stock in the Bin
+		* /sap/opu/odata/sap/Y20_EWM_OUT_AFPI_PCON_SRV/DestBinSet
+		*/
+		getDestBinData: function getDestBinData() {
+			var _this = this;
+			var sWarehouse = "TMPL"; 	// TODO: get from global parameter
+			var sNlpla = "";
+
+			var jsonModelWarehTaskToPcon = _this.getView().getModel("modelWarehouseOrder");
+			if (jsonModelWarehTaskToPcon !== undefined) {
+				var dataWarehTaskToPcon = jsonModelWarehTaskToPcon.getData();
+				if (dataWarehTaskToPcon !== undefined && dataWarehTaskToPcon.Nlpla.length > 0) {
+					sNlpla = dataWarehTaskToPcon.Nlpla;
+				} else {
+					// no destination bin
+					_this.showMessage("warning",
+						_this.getResourceBundle().getText("SCAN_DEST"),
+						_this.getResourceBundle().getText("SCAN_DEST_NULL"));
+					return;
+				}
+			}
+
+			var jsonModelWarehTaskToPcon = _this.getView().getModel("modelWarehouseOrder");
+			var dataWarehTaskToPcon = jsonModelWarehTaskToPcon.getData();
+
+			//TANUM = WarehouseTask
+			var requestBody = {
+				"Lgnum": sWarehouse,
+				"Nlber": dataWarehTaskToPcon.Nlber,
+				"Nlpla": sNlpla,
+				"Nltyp": dataWarehTaskToPcon.Nltyp,
+				"HUIdent": dataWarehTaskToPcon.HUIdent,
+				"Aisle": dataWarehTaskToPcon.Aisle,
+				"Stack": dataWarehTaskToPcon.Stack,
+				"LvlV": dataWarehTaskToPcon.LvlV,
+				"Lgpla_Scan": "",
+				"Tanum": dataWarehTaskToPcon.WarehouseTask,
+				"BinPhysicalStock": {
+					"results": []
+				}
+			};
+
+			// OData Model
+			var oModel = new sap.ui.model.odata.v2.ODataModel("/sap/opu/odata/sap/Y20_EWM_OUT_AFPI_PCON_SRV", true);
+			BusyIndicator.show();
+
+			oModel.create("/DestBinSet", requestBody, {
+				useBatch: false,
+				success: function (oData, oResponse) {
+					try {
+						// create model from received data
+						_this.createModelsFromData_Bin(oData);
+						BusyIndicator.hide();
+						//_this.handleMessageResponse(oResponse);
+
+
+					} catch (err) {
+						console.log(err);
+						BusyIndicator.hide();
+						_this.addMessage("error", _this.getResourceBundle().getText("SCAN_DEST"), err.message, true);
+					}
+				},
+
+				error: function (oError) {
+					console.log(oError);
+					BusyIndicator.hide();
+					_this.handleMessageResponse(oError);
+				}
+			});
+		},
+
+		/**
+		* createModelsFromData_Bin
+		*/
+		createModelsFromData_Bin: function createModelsFromData_Bin(data) {
+
+			// Entity: BinPhysicalStock
+			var dataBinPhysicalStock = data.BinPhysicalStock;
+			var jsonModelBinPhysicalStock = new JSONModel(dataBinPhysicalStock);
+			this.getView().setModel(jsonModelBinPhysicalStock, "modelStorageBin");
+
+			this._resetSortingState();
+		},
+
+		/**
+		* onScanDestinationSubmit
+		* OData request
+		*/
+		onScanDestinationSubmit: function onScanDestinationSubmit(oEvent) {
+			var _this = this;
+
+			// scanned Destination
+			var scannedDestination = oEvent.getSource().getValue();
+			if (scannedDestination === null || scannedDestination.length == 0) {
+				// no scanned value
+				_this.showMessage("warning",
+					_this.getResourceBundle().getText("SCAN_DEST"),
+					_this.getResourceBundle().getText("SCAN_DEST_MISSING"));
+				return;
+			}
+
+			// check if HU was scanned first
+			var scannedHU = _this.byId("sourceHUValue").getText();
+			if (scannedHU === null || scannedHU.length == 0) {
+				// no scanned HU yet
+				_this.showMessage("warning",
+					_this.getResourceBundle().getText("SCAN_DEST"),
+					_this.getResourceBundle().getText("SCAN_DEST_MISSING_HU"));
+				_this.byId("scanDestination").setValue("");
+				_this.setFocusOnField("scanHU");
+				return;
+			}
+
+			// check if scanned destination is equal to the bin
+			var jsonModelWarehTaskToPcon = _this.getView().getModel("modelWarehouseOrder");
+			if (jsonModelWarehTaskToPcon !== undefined) {
+				var dataWarehTaskToPcon = jsonModelWarehTaskToPcon.getData();
+				if (dataWarehTaskToPcon !== undefined && dataWarehTaskToPcon.Nlpla.length > 0) {
+					if (scannedDestination !== dataWarehTaskToPcon.Nlpla) {
+						_this.showMessage("warning",
+							_this.getResourceBundle().getText("SCAN_DEST"),
+							_this.getResourceBundle().getText("SCAN_DEST_NOTEQ_HU"));
+						_this.byId("scanDestination").setValue("");
+						_this.setFocusOnField("scanDestination");
+						return;
+					}
+				}
+			}
+
+			// confirm scanned destination bin
+			_this.confirmDestBin(scannedDestination);
+		},
+
+		/**
+		* confirmDestBin
+		* OData request
+		* POST Request DestBin (confirm the destination bin) 
+		* /sap/opu/odata/sap/Y20_EWM_OUT_AFPI_PCON_SRV/DestBinSet
+		*/
+		confirmDestBin: function confirmDestBin(sNlpla) {
+			var _this = this;
+			var sWarehouse = "TMPL"; 	// TODO: get from global parameter
+			var sNlber = "";
+
+			// OData request
+
+			var jsonModelScanSourcHU = _this.getView().getModel("modelSourceHU");
+			if (jsonModelScanSourcHU !== undefined) {
+				var dataScanSourcHU = jsonModelScanSourcHU.getData();
+				if (dataScanSourcHU !== undefined && dataScanSourcHU.Nlber.length > 0) {
+					sNlber = dataScanSourcHU.Nlber;
+				}
+				// else error ?
+			}
+
+			var jsonModelWarehTaskToPcon = _this.getView().getModel("modelWarehouseOrder");
+			var dataWarehTaskToPcon = jsonModelWarehTaskToPcon.getData();
+
+			// var jsonModelBinPhysicalStock = _this.getView().getModel("modelStorageBin");
+			// var dataBinPhysicalStock = jsonModelBinPhysicalStock.getData();
+
+			var requestBody = {
+				"Lgnum": sWarehouse,
+				"Nlber": sNlber,
+				"Nlpla": sNlpla,
+				"Nltyp": dataWarehTaskToPcon.Nltyp,
+				"HUIdent": dataWarehTaskToPcon.HUIdent,
+				"Aisle": dataWarehTaskToPcon.Aisle,
+				"Stack": dataWarehTaskToPcon.Stack,
+				"LvlV": dataWarehTaskToPcon.LvlV,
+				"Lgpla_Scan": sNlpla,
+				"Tanum": dataWarehTaskToPcon.WarehouseTask,
+				"BinPhysicalStock": {
+					"results": []
+				}
+			};
+
+			// OData Model
+			var oModel = new sap.ui.model.odata.v2.ODataModel("/sap/opu/odata/sap/Y20_EWM_OUT_AFPI_PCON_SRV", true);
+			BusyIndicator.show();
+
+			oModel.create("/DestBinSet", requestBody, {
+				useBatch: false,
+				success: function (oData, oResponse) {
+					try {
+						// create model from received data
+						_this.createModelsFromData_Dest(oData);
+						BusyIndicator.hide();
+						//_this.handleMessageResponse(oResponse);
+
+						// final destination bin confirmed
+						var successmsg = _this.getResourceBundle().getText("SCAN_DEST_SUCCESS") + " " + sNlpla;
+						_this.addMessage("info", _this.getResourceBundle().getText("SCAN_DEST"), successmsg, false);
+						_this.displayMessageInFooter(successmsg);
+						//			        	sap.m.MessageToast.show(successmsg)
+
+						// clear screen
+						_this._clearScreen(true);
+
+					} catch (err) {
+						console.log(err);
+						BusyIndicator.hide();
+						_this.addMessage("error", _this.getResourceBundle().getText("SCAN_DEST"), err.message, true);
+					}
+				},
+
+				error: function (oError) {
+					console.log(oError);
+					BusyIndicator.hide();
+					_this.handleMessageResponse(oError);
+				}
+			});
+		},
+
+		/**
+		* createModelsFromData_Dest
+		*/
+		createModelsFromData_Dest: function createModelsFromData_Dest(data) {
+
+			//	    	// Entity: DestBin
+			//	        var dataDestBin = data.DestBin;
+			//	        var jsonModelDestBin = new JSONModel(dataDestBin);
+			//	        this.getView().setModel(jsonModelDestBin, "modelDestinationBin");
+		},
+
+		/**
+		* buildStorageBin
+		* Stack image
+		*/
+		buildStorageBin: function buildStorageBin() {
+			var container = this.getView().byId("shelfDisplay");
+			var shelfs = 8;
+			var shelfToDisplay = 6;
+			var shelfSections = 3;
+			var targetShelfSection = 2;
+
+			container.removeAllItems();
+
+			for (var count = 1; count <= shelfs; count++) {
+				var shelf = getBox("30px", "70%", "Start", "Center", "stack");
+
+				if (count === shelfToDisplay) {
+					for (var sections = 1; sections <= shelfSections; sections++) {
+						if (sections === targetShelfSection) {
+							var innerBoxSelected = getBox("30px", "33%", "Start", "Center", "item2");	// itemNotRelevant
+							shelf.addItem(innerBoxSelected);
+						} else {
+							var innerBox = getBox("30px", "33%", "Start", "Center", "item1");			// itemRelevant
+							shelf.addItem(innerBox);
+						}
+					}
+				}
+
+				container.addItem(shelf);
+			}
+
+			function getBox(height, width, alignItems, justifyContent, styleClass) {
+				return new sap.m.FlexBox({
+					height: height,
+					width: width,
+					alignItems: alignItems,
+					justifyContent: justifyContent
+				}).addStyleClass(styleClass);
+			}
+		},
+
+
+		/**
+		* onChgDstPressed
+		* Scan destination bin for changing
+		*/
+		onChgDstPressed: function onChgDstPressed(oEvent) {
+			this.getChangeDestBinDialog().open();
+			this.byId("formChgDestBinInput").setValue("");
+		},
+
+		/**
+		* onCloseChgDestBinDialog
+		* Close popup dialog for changing destination bin without changes
+		*/
+		onCloseChgDestBinDialog: function onCloseChgDestBinDialog() {
+			this.byId("popupDialogChgDestBin").close();
+		},
+
+		/**
+		* onConfirmChgDestBinDialog
+		* Change destination bin and close popup dialog
+		*/
+		onConfirmChgDestBinDialog: function onConfirmChgDestBinDialog() {
+			var _this = this;
+
+			// scanned Destination
+			var scannedDestination = _this.byId("formChgDestBinInput").getValue();
+			if (scannedDestination === null || scannedDestination.length == 0) {
+				// no scanned value
+				_this.showMessage("warning",
+					_this.getResourceBundle().getText("SCAN_DEST"),
+					_this.getResourceBundle().getText("SCAN_DEST_MISSING"));
+				_this.setFocusOnField("formChgDestBinInput");
+				return;
+			}
+
+			// OData request
+			//_this.getWarehTaskData(scannedDestination);
+			// confirm directly after changing destination bin
+			_this.confirmDestBin(scannedDestination);
+
+			_this.byId("popupDialogChgDestBin").close();
+		},
+
+		/**
+		* onExitPressed
+		*/
+		onExitPressed: function onClearPressed(oEvent) {
+			//TODO: exit logic
+			// exit app
+			jQuery.sap.require("sap.m.MessageToast");
+			sap.m.MessageToast.show("Good bye!");
+		},
+
+		/**
+		* setCurrentLoggedInUser
+		*/
+		setCurrentLoggedInUser: function setCurrentLoggedInUser() {
+			var _thisUser = this;
+			var xmlHttp = new XMLHttpRequest();
+
+			xmlHttp.onreadystatechange = function () {
+				if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+					var oUserData = JSON.parse(xmlHttp.responseText);
+					var user = " " + oUserData.id;
+					_thisUser.byId("headerContentText").setText(_thisUser.byId("headerContentText").getText().concat(user));
+				}
+			};
+
+			xmlHttp.open("GET", "/sap/bc/ui2/start_up", false);
+			xmlHttp.send(null);
+		},
+
+
+
+		//################ Private APIs ###################
+
+		/**
+		* _enableBtnChgDst
+		*/
+		_enableBtnChgDst: function (bEnable) {
+			// enable or disable button for changing destination bin
+			this.byId("btnChgDst").setEnabled(bEnable);
+		},
+
+		/**
+		* _clearScreen
+		*/
+		_clearScreen: function (bClearMessages) {
+
+			// clear models
+			this.getView().setModel(new JSONModel(null), "modelSourceHU");
+			this.getView().setModel(new JSONModel(null), "modelWarehouseOrder");
+			this.getView().setModel(new JSONModel(null), "modelDestinationBin");
+			this.getView().setModel(new JSONModel(null), "modelStorageBin");
+
+			this._resetSortingState();
+
+			if (bClearMessages) {
+				this.clearMessages();
+			}
+
+			// no image
+			this.byId("shelfDisplay").setVisible(false);
+
+			// disable buttons 
+			this._enableBtnChgDst(false);
+
+			// next scan
+			this.byId("sourceHUTitle").setText("");
+			this.byId("sourceHUValue").setText("");
+			this.byId("binTitle").setText("");
+			this.byId("warehouseOrderTitle").setText("");
+			this.byId("scanHU").setValue("");
+			this.byId("scanDestination").setValue("");
+			this.setFocusOnField("scanHU");
+		},
+
+		/**
+		* _resetSortingState
+		*/
+		_resetSortingState: function () {
+			var oTable = this.byId("uiTableStorageBin");
+			oTable.getBinding("rows").sort(null);
+			var aColumns = oTable.getColumns();
+			for (var i = 0; i < aColumns.length; i++) {
+				aColumns[i].setSorted(false);
+			}
+		}
+
+	});
+});

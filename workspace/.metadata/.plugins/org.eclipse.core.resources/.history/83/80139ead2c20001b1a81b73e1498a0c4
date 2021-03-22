@@ -1,0 +1,28 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:l="sap.ui.layout"
+	xmlns:table="sap.ui.table"
+	xmlns:form="sap.ui.layout.form"
+	xmlns="sap.m">
+	<VBox justifyContent="Start" height="auto">
+		<VBox>
+			<FlexBox class="sapUiTinyMarginTop" justifyContent="SpaceBetween">
+				<Text class="customTextSmall" text="Scan Pack HU Type"/>
+				<Input class="customInput" id="scanPackHUType" submit="onPrintPressed" value="{modelNewPackNav>/HUType}"/>
+			</FlexBox>
+			<FlexBox justifyContent="SpaceBetween">
+				<Text class="customTextSmall " text="Selected HU"/>
+				<Input class="customInput" enabled="false" value="{modelNewPackNav>/LastHUType}"/>
+			</FlexBox>
+		</VBox>
+		<FlexBox height="12rem" justifyContent="Center"/>
+		<FlexBox width="100%" justifyContent="SpaceBetween">
+
+			<Button class="customButton" press="onPrintPressed" width="7rem" text="Print"/>
+			<Button class="customButton" press="onOpenWeightDialog" width="7rem" text="Weight"/>
+
+			<Button class="customButton" width="7rem" text="Info" press="onInfoPressed"/>
+		</FlexBox>
+
+	</VBox>
+</core:FragmentDefinition>

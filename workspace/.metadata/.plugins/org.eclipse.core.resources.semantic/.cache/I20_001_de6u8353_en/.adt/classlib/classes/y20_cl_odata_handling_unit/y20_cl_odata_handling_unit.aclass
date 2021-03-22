@@ -1,0 +1,500 @@
+CLASS y20_cl_odata_handling_unit DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+
+    "!<p class="shorttext synchronized">Get Instance</p>
+    CLASS-METHODS get_instance
+      RETURNING
+        VALUE(ro_instance) TYPE REF TO y20_cl_odata_handling_unit .
+    "!<p class="shorttext synchronized">Complete HU process step</p>
+    METHODS complete_hu_process_step
+      IMPORTING
+        !iv_lgnum       TYPE /scwm/lgnum
+        !iv_workstation TYPE /scwm/de_workstation
+        !iv_save        TYPE abap_bool DEFAULT abap_true
+        !is_huhdr       TYPE /scwm/s_huhdr_int
+      RAISING
+        /iwbep/cx_mgw_tech_exception .
+    "!<p class="shorttext synchronized">Create HU task to bin</p>
+    METHODS create_taskhu_to_bin
+      IMPORTING
+        !iv_lgnum    TYPE y20_cl_dass_hu_trolley_mpc=>ts_handlingunitent-lgnum
+        !iv_guid_hu  TYPE y20_cl_dass_hu_trolley_mpc=>ts_handlingunitent-guid_hu
+        !iv_bin      TYPE /scwm/de_lgpla
+        !iv_proctype TYPE /scwm/de_procty
+      EXPORTING
+        !et_bapiret  TYPE bapirettab
+        !ev_severity TYPE bapi_mtype .
+    "!<p class="shorttext synchronized">Create HU task to resource</p>
+    METHODS create_taskhu_to_trolley
+      IMPORTING
+        !iv_lgnum    TYPE /scwm/lgnum
+        !iv_guid_hu  TYPE /scwm/guid_hu
+        !iv_resource TYPE /scwm/de_rsrc
+        !iv_proctype TYPE /scwm/de_procty
+        !iv_logpos   TYPE /scwm/de_logpos OPTIONAL
+        !iv_who      TYPE /scwm/de_who OPTIONAL
+      EXPORTING
+        !et_bapiret  TYPE bapirettab
+        !ev_severity TYPE bapi_mtype .
+    "!<p class="shorttext synchronized">Get Item Text</p>
+    METHODS read_dlv_item_text_by_huident
+      IMPORTING
+        !iv_lgnum      TYPE /scwm/lgnum
+        !iv_huident    TYPE /scwm/de_huident
+        !iv_id         TYPE tdid
+      RETURNING
+        VALUE(rv_text) TYPE tline-tdline
+      RAISING
+        /iwbep/cx_mgw_tech_exception .
+    "!<p class="shorttext synchronized">Retrieve HU by HU identification number</p>
+    METHODS read_hu_single_by_huident
+      IMPORTING
+        !iv_huident TYPE /scwm/de_huident
+      EXPORTING
+        !es_huhdr   TYPE /scwm/s_huhdr_int
+        !et_huitem  TYPE /scwm/tt_huitm_int
+      RAISING
+        /iwbep/cx_mgw_tech_exception .
+    "!<p class="shorttext synchronized">Retrieve open tasks by HU identification number</p>
+    METHODS read_open_taskhu_by_huident
+      IMPORTING
+        !iv_lgnum           TYPE /scwm/lgnum
+        !it_huident         TYPE /scwm/tt_huident
+        !iv_read_buffer     TYPE boole_d DEFAULT abap_false
+      RETURNING
+        VALUE(rt_task_open) TYPE /scwm/tt_to_det_mon
+      RAISING
+        /iwbep/cx_mgw_tech_exception .
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+    "!<p class="shorttext synchronized">Handling Unit instance</p>
+    CLASS-DATA mo_hu TYPE REF TO y20_cl_odata_handling_unit.
+    DATA: mv_message   TYPE string,
+          "!<p class="shorttext synchronized">Table with open warehouse tasks</p>
+          mt_task_open TYPE /scwm/tt_to_det_mon.
+ENDCLASS.
+
+
+
+CLASS y20_cl_odata_handling_unit IMPLEMENTATION.
+
+
+  METHOD complete_hu_process_step.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5
+* Description : Complete HU process step ZIB2
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    /scwm/cl_wm_packing=>get_instance( IMPORTING eo_instance = DATA(lo_pack) ).
+
+    " initialize packing. Set global parameters, log instance
+    lo_pack->init_by_workstation(
+      EXPORTING
+        is_workstation   = VALUE #( lgnum = iv_lgnum
+                                    workstation = iv_workstation
+                                    procs = is_huhdr-procs )
+        ir_huident       = VALUE #( ( sign   = wmegc_sign_inclusive
+                                      option = wmegc_option_eq
+                                      low    = is_huhdr-huident ) )
+      EXCEPTIONS
+        error            = 1
+        OTHERS           = 2 ).
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO mv_message.
+      RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception( ).
+    ENDIF.
+
+    lo_pack->hu_process_completed(
+      EXPORTING
+        iv_hu  = is_huhdr-guid_hu
+      EXCEPTIONS
+        error  = 1
+        OTHERS = 2 ).
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO mv_message.
+      RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception( ).
+    ENDIF.
+
+    IF iv_save = abap_true.
+      lo_pack->save(
+        EXCEPTIONS
+          error     = 1
+          OTHERS    = 2 ).
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+           WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO mv_message.
+        RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception( ).
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD create_taskhu_to_bin.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5
+* Description : Create HU task to bin. Task is created with class
+*                 /SCWM/CL_WM_PACKING so confirmation is done automatically
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    /scwm/cl_tm=>cleanup( iv_lgnum = iv_lgnum ).
+    /scwm/cl_tm=>register_cleanup_wt( ).
+
+    /scwm/cl_wm_packing=>get_instance(
+      IMPORTING eo_instance = DATA(lo_pack) ).
+
+    lo_pack->init(
+      EXPORTING
+        iv_lgnum  = iv_lgnum
+        iv_procty = iv_proctype
+      EXCEPTIONS
+        error     = 1
+        OTHERS    = 2 ).
+    IF sy-subrc <> 0.
+      et_bapiret = lo_pack->go_log->get_prot( ).
+      ev_severity = lo_pack->go_log->get_severity( ).
+    ENDIF.
+
+    lo_pack->move_hu(
+      EXPORTING
+        iv_hu  = iv_guid_hu
+        iv_bin = iv_bin
+      EXCEPTIONS
+        error  = 1
+        OTHERS = 2 ).
+    IF sy-subrc <> 0.
+      et_bapiret = lo_pack->go_log->get_prot( ).
+      ev_severity = lo_pack->go_log->get_severity( ).
+    ENDIF.
+
+    lo_pack->save(
+      EXCEPTIONS
+        error     = 1
+        OTHERS    = 2 ).
+    et_bapiret = lo_pack->go_log->get_prot( ).
+    ev_severity = lo_pack->go_log->get_severity( ).
+  ENDMETHOD.
+
+
+  METHOD create_taskhu_to_trolley.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5
+* Description : Create HU task to trolley
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    /scwm/cl_tm=>cleanup( iv_lgnum = iv_lgnum ).
+    /scwm/cl_tm=>register_cleanup_wt( ).
+
+    /scwm/cl_wm_packing=>get_instance(
+      IMPORTING eo_instance = DATA(lo_pack) ).
+
+    lo_pack->init(
+      EXPORTING
+        iv_lgnum  = iv_lgnum
+        iv_procty = iv_proctype
+      EXCEPTIONS
+        error     = 1
+        OTHERS    = 2 ).
+    IF sy-subrc <> 0.
+      et_bapiret = VALUE #( ( id   = sy-msgid
+                              type = sy-msgty
+                              number = sy-msgno
+                              message_v1 = sy-msgv1
+                              message_v2 = sy-msgv2
+                              message_v3 = sy-msgv3
+                              message_v4 = sy-msgv4 ) ).
+      ev_severity = wmegc_severity_err.
+      RETURN.
+    ENDIF.
+
+    lo_pack->move_hu_to_resource(
+      EXPORTING
+        iv_hu         = iv_guid_hu
+        iv_resource   = iv_resource
+        iv_logpos     = iv_logpos
+        iv_who        = iv_who
+      EXCEPTIONS
+        error         = 1
+        OTHERS        = 2 ).
+    IF sy-subrc <> 0.
+      et_bapiret = lo_pack->go_log->get_prot( ).
+      ev_severity = lo_pack->go_log->get_severity( ).
+    ENDIF.
+
+    lo_pack->save(
+      EXCEPTIONS
+        error  = 1
+        OTHERS = 2 ).
+    IF sy-subrc <> 0.
+      " no handling here
+    ENDIF.
+    et_bapiret = lo_pack->go_log->get_prot( ).
+    ev_severity = lo_pack->go_log->get_severity( ).
+  ENDMETHOD.
+
+
+  METHOD get_instance.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5
+* Description : Create instance
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF mo_hu IS NOT BOUND.
+      mo_hu = NEW y20_cl_odata_handling_unit( ).
+    ENDIF.
+
+    IF mo_hu IS BOUND.
+      ro_instance = mo_hu.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD read_dlv_item_text_by_huident.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5
+* Description : Read delivery text by HUident number
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    CONSTANTS: lc_object TYPE tdobject VALUE '/SCWM/DLVI'.
+    DATA: ls_entity TYPE y20_cl_dass_hu_trolley_mpc=>ts_itemtextent,
+          ls_head   TYPE thead,
+          lt_line   TYPE STANDARD TABLE OF tline,
+          lv_name   TYPE  tdobname,
+          lv_msg    TYPE string.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    read_hu_single_by_huident(
+      EXPORTING
+        iv_huident = iv_huident
+      IMPORTING
+        es_huhdr   = DATA(ls_huhdr)
+        et_huitem  = DATA(lt_huitm) ).
+    IF lines( lt_huitm ) IS INITIAL.
+      MESSAGE e063(y20_ui5) WITH iv_huident INTO lv_msg.
+      RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception( ).
+    ENDIF.
+
+    DATA(ls_item) = REF #( lt_huitm[ 1 ] ).
+    IF ls_item->qdocid IS INITIAL OR ls_item->qitmid IS INITIAL.
+      MESSAGE e145(/scwm/shp_rcv) WITH iv_huident INTO lv_msg.
+      RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception( ).
+    ENDIF.
+
+    lv_name = |{ ls_item->qdocid }{ ls_item->qitmid }|.
+    CALL FUNCTION 'READ_TEXT'
+      EXPORTING
+        client                  = sy-mandt
+        id                      = iv_id
+        language                = sy-langu
+        name                    = lv_name
+        object                  = lc_object
+      IMPORTING
+        header                  = ls_head
+      TABLES
+        lines                   = lt_line
+      EXCEPTIONS
+        id                      = 1
+        language                = 2
+        name                    = 3
+        not_found               = 0
+        object                  = 5
+        reference_check         = 6
+        wrong_access_to_archive = 7
+        OTHERS                  = 8.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO lv_msg.
+      RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception( ).
+    ENDIF.
+
+    DELETE lt_line WHERE tdline IS INITIAL.
+    IF lines( lt_line ) = 0.
+      RETURN.
+    ENDIF.
+
+    rv_text = lt_line[ 1 ]-tdline.
+  ENDMETHOD.
+
+
+  METHOD read_hu_single_by_huident.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5
+* Description : Read single HU
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA lt_huhdr TYPE /scwm/tt_huhdr_int.
+    DATA lt_huitm TYPE /scwm/tt_huitm_int.
+    DATA lt_bapiret TYPE bapiret2_t.
+    DATA lv_huident TYPE /scwm/de_huident.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    CLEAR: es_huhdr, et_huitem.
+    IF iv_huident IS INITIAL.
+      MESSAGE e157(/scwm/hugeneral) INTO mv_message.
+      RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception( ).
+    ENDIF.
+
+    lv_huident = |{ iv_huident ALPHA = IN }|.
+    CALL FUNCTION '/SCWM/HU_SELECT'
+      EXPORTING
+        it_huident = VALUE /scwm/tt_huident( ( huident = lv_huident ) )
+      IMPORTING
+        et_huhdr   = lt_huhdr
+        et_huitm   = lt_huitm
+        et_bapiret = lt_bapiret
+      EXCEPTIONS
+        not_found  = 1
+        error      = 2
+        OTHERS     = 3.
+    IF sy-subrc <> 0.
+      LOOP AT  lt_bapiret ASSIGNING FIELD-SYMBOL(<ls_bapiret>)
+                                    WHERE type CA wmegc_severity_ea.
+        MESSAGE ID <ls_bapiret>-id TYPE <ls_bapiret>-type NUMBER <ls_bapiret>-number
+              WITH <ls_bapiret>-message_v1 <ls_bapiret>-message_v2
+                   <ls_bapiret>-message_v3 <ls_bapiret>-message_v4 INTO mv_message.
+        RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception( ).
+      ENDLOOP.
+    ENDIF.
+
+    TRY.
+        es_huhdr = lt_huhdr[ 1 ].
+        et_huitem = lt_huitm.
+      CATCH cx_sy_itab_line_not_found.
+        CLEAR: es_huhdr, et_huitem.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD read_open_taskhu_by_huident.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5
+* Description : Retrieve open tasks by HU identification number
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA lt_task_open TYPE /scwm/tt_to_det_mon.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF lines( it_huident ) = 0.
+      MESSAGE e015(y20_ui5) INTO mv_message.
+      RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception( ).
+    ENDIF.
+
+    " check buffer. if nothing found will continue with DB read
+    IF iv_read_buffer = abap_true.
+      LOOP AT it_huident ASSIGNING FIELD-SYMBOL(<ls_hui>).
+        ASSIGN mt_task_open[ vlenr = <ls_hui>-huident ] TO FIELD-SYMBOL(<ls_buffer_task>).
+        IF sy-subrc = 0.
+          APPEND <ls_buffer_task> TO rt_task_open.
+        ENDIF.
+      ENDLOOP.
+      IF lines( rt_task_open ) = lines( it_huident ).
+        RETURN.
+      ENDIF.
+    ENDIF.
+
+    DATA(ls_selcrit) = VALUE /scwm/s_to_selcrit_mon(
+      r_nlenr = VALUE #( FOR <ls_hu> IN it_huident ( sign   = wmegc_sign_inclusive
+                                                     option = wmegc_option_eq
+                                                     low    = <ls_hu>-huident ) ) ).
+    CALL FUNCTION '/SCWM/TO_GET_WIP'
+      EXPORTING
+        iv_lgnum   = iv_lgnum
+        iv_open    = abap_true
+        is_selcrit = ls_selcrit
+      IMPORTING
+        et_to      = lt_task_open.
+    IF lines( lt_task_open ) = 0.
+      MESSAGE e001(y20_ui5) WITH it_huident[ 1 ]-huident INTO mv_message.
+      RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception( ).
+    ENDIF.
+
+    APPEND LINES OF lt_task_open TO mt_task_open.
+
+    rt_task_open = lt_task_open.
+  ENDMETHOD.
+ENDCLASS.

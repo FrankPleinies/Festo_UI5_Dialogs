@@ -1,0 +1,77 @@
+<core:FragmentDefinition xmlns="sap.m"
+    xmlns:l="sap.ui.layout"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:core="sap.ui.core">
+    <Dialog title="{i18n>deviationHandling}" id="popupDialogDeviation" class="sapUiSizeCozy sapUiContentPadding" afterOpen="afterOpenDeviation">
+
+        <f:Form width="35rem" id="dialogDeviationForm" editable="true">
+
+            <f:layout>
+                <f:ResponsiveGridLayout labelSpanXL="3" labelSpanL="3" labelSpanM="3" labelSpanS="12" adjustLabelSpan="false" emptySpanXL="4" emptySpanL="4" emptySpanM="4" emptySpanS="0" columnsXL="1" columnsL="1" columnsM="1" singleContainerFullSize="false" />
+            </f:layout>
+            <f:formContainers>
+                <f:FormContainer>
+                    <f:formElements>
+                        <f:FormElement>
+                            <HBox>
+                                <VBox width="60%" justifyContent="SpaceBetween">
+                                    <List class="sapUiMediumMarginBottom customListBorder" showSeparators="None">
+                                        <headerToolbar>
+                                            <OverflowToolbar>
+                                                <content>
+                                                    <Title text="{i18n>product}"/>
+                                                    <ToolbarSpacer />
+                                                </content>
+                                            </OverflowToolbar>
+                                        </headerToolbar>
+                                        <items>
+                                            <StandardListItem title="{i18n>prodNoShort}:" info="{modelDeviation>/Matnr}" />
+                                            <StandardListItem title="{i18n>product}" info="{  path: 'modelDeviation>/Maktx',
+                                                                                       formatter: '.formatter.longTextFormatterDeviation'}"
+                                                tooltip="{modelDeviation>/Maktx}"/>
+                                            <StandardListItem title="{i18n>quanShort}" info="{modelDeviation>/Vsolm} {modelDeviation>/Meins}"/>
+                                        </items>
+                                    </List>
+                                </VBox>
+                                <VBox width="40%" justifyContent="Center" alignItems="Center">
+                                    <Image src="./images/squarebox.jpg" width="10rem" height="10rem"/>
+                                </VBox>
+                            </HBox>
+
+                        </f:FormElement>
+                        <f:FormElement>
+                            <Panel width="auto" class="customListBorder">
+                                <OverflowToolbar>
+                                    <Title class="customTextSmaller" text="{i18n>quantityAdjustment}"/>
+                                </OverflowToolbar>
+                                <content>
+                                    <Text text="{i18n>currentQuanOnBin}" />
+                                    <HBox justifyContent="SpaceBetween">
+                                        <StepInput id="stepInputDeviation" change="onDeviationStepChangedPressed" value="{modelDeviation>/Nistm}" min="0" max="{= ${modelDeviation>/Vsolm}*1 }"/>
+                                        <Button text="{i18n>adjust}" id="deviationAdjustButton" press="onDeviationAdjustPressed"/>
+                                    </HBox>
+                                </content>
+                            </Panel>
+                        </f:FormElement>
+                        <f:FormElement>
+                            <Panel width="auto" class="customListBorder sapUiMediumMarginTop">
+                                <OverflowToolbar>
+                                    <Title class="customTextSmaller" text="{i18n>otherExceptions}"/>
+                                </OverflowToolbar>
+                                <content>
+                                    <Text text="{i18n>cancelTasks}" />
+                                    <Button id="deviationBlockButton" press="onDeviationBlockStockPressed" text="{i18n>blockStock}"/>
+                                </content>
+                            </Panel>
+                        </f:FormElement>
+                    </f:formElements>
+
+                </f:FormContainer>
+            </f:formContainers>
+        </f:Form>
+
+        <buttons>
+            <Button text="{i18n>close}" press="onCloseDeviationDialog" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

@@ -1,0 +1,21 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form" xmlns:l="sap.ui.layout" 
+xmlns:acm="y20_obd_vas.controller">
+	<VBox height="23rem">
+		<VBox height="80%">
+		</VBox>
+		<VBox height="20%">
+			<FlexBox justifyContent="SpaceBetween" alignItems="End">
+				<items>
+					<Text text="{i18n>Form_ScanHU}" wrapping="false" class="customTextSmall sapUiTinyMarginTop"/>
+					<!-- <Input value="" id="scanHU" submit="onScanHU" class="customInput"/> -->
+					<acm:ScanInput id="scanHU" submit="onScanHU" class="customInput">
+					<acm:attributes>
+						<core:CustomData key="inputmode" value="none" writeToDom="true"/>
+					</acm:attributes>
+				</acm:ScanInput>
+				</items>
+			</FlexBox>
+		</VBox>
+	</VBox>
+
+</core:FragmentDefinition>

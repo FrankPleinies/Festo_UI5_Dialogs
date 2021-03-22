@@ -1,0 +1,58 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:l="sap.ui.layout"
+	xmlns:grid="sap.ui.layout.cssgrid"
+	xmlns:form="sap.ui.layout.form"
+	xmlns:table="sap.ui.table"
+	xmlns="sap.m">
+
+	<HBox height="90%" justifyContent="SpaceBetween">
+		<VBox justifyContent="SpaceBetween" class="sapUiSmallMarginBegin" height="100%" width="100%">
+			<VBox>
+				<FlexBox class="" width="100%" justifyContent="SpaceBetween">
+					<items>
+						<Text id="secondCellTextOne" class="customTextMedium" text="Prod. No." />
+						<Text id="secondCellTextTwo" class="customTextLarge" text="{= ${modelWarehouseTaskNav>/MATNR}*1}"/>
+					</items>
+				</FlexBox>
+				<FlexBox class="sapUiTinyMarginTop" width="100%" justifyContent="SpaceBetween">
+					<items>
+						<Text class="customTextMedium" text="Prod." />
+						<Text class="customTextSmall" text="{  path: 'modelWarehouseTaskNav>/MAKTX',
+								formatter: '.formatter.longTextFormatter'
+							 }"/>
+					</items>
+				</FlexBox>
+				<!-- <FlexBox class="sapUiTinyMarginTop" width="100%" justifyContent="SpaceBetween">
+					<items>
+						<Text class="customTextMedium" text="Pack Qty" />
+						<Text class="customTextSmall" text="{modelWarehouseTaskNav>/PACK_QTY/QUAN}"/>
+					</items>
+				</FlexBox>
+				<FlexBox class="sapUiTinyMarginTop" width="100%" justifyContent="SpaceBetween">
+					<items>
+						<Text class="customTextMedium" text="Pick Qty" />
+						<Text class="customTextSmall" text="{modelWarehouseTaskNav>/PICK_QTY/QUAN}"/>
+					</items>
+				</FlexBox> -->
+				<FlexBox class="sapUiTinyMarginTop" width="100%" justifyContent="SpaceBetween">
+					<items>
+						<Text class="customTextMedium" text="{i18n>Form_HndlCode}" />
+						<Text class="customTextSmall" text="{modelWarehouseTaskNav>/HNDLCODE}"/>
+					</items>
+				</FlexBox>
+			</VBox>
+			<VBox>
+
+				<FlexBox class="" width="100%" justifyContent="SpaceAround">
+					<items>
+						<Image src="./images/squarebox.jpg" width="12.5rem" height="12.5rem"/>
+						<Button class="customButton sapUiLargeMarginTop sapUiLargeMarginTop" press="onInfoPressed" width="6rem" text="Info"/>
+					</items>
+				</FlexBox>
+
+			</VBox>
+		</VBox>
+	</HBox>
+
+</core:FragmentDefinition>

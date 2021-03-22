@@ -1,0 +1,1013 @@
+class YCL_Y20_EWM_QUALITY_GA_MPC definition
+  public
+  inheriting from /IWBEP/CL_MGW_PUSH_ABS_MODEL
+  create public .
+
+public section.
+
+  types:
+    begin of PRODUCT,
+        MATID type SYSUUID_X,
+        MATNR type C length 40,
+        MAKTX type C length 40,
+        HNDLCODE type C length 4,
+    end of PRODUCT .
+  types:
+   begin of ts_text_element,
+      artifact_name  type c length 40,       " technical name
+      artifact_type  type c length 4,
+      parent_artifact_name type c length 40, " technical name
+      parent_artifact_type type c length 4,
+      text_symbol    type textpoolky,
+   end of ts_text_element .
+  types:
+         tt_text_elements type standard table of ts_text_element with key text_symbol .
+  types:
+      QUANTITY type /SCWM/S_QUAN .
+  types:
+  begin of TS_SCANHANDLINGUNITENT,
+     LGNUM type C length 4,
+     SCANHU type C length 20,
+  end of TS_SCANHANDLINGUNITENT .
+  types:
+TT_SCANHANDLINGUNITENT type standard table of TS_SCANHANDLINGUNITENT .
+  types:
+  begin of TS_DOCUMENTITEMENT,
+     LGNUM type C length 4,
+     DOCID type X length 16,
+     ITEMID type X length 16,
+     DOCNO type C length 35,
+     ITEMNO type C length 10,
+     PRODUCT type PRODUCT,
+     QTY type QUANTITY,
+     QTYCOUNTED type QUANTITY,
+     SCANHU type C length 20,
+     WHO type C length 10,
+     TASKCOUNT type C length 3,
+     COUNTED type C length 1,
+     COUNTEDTIMES type C length 1,
+     RESULT type C length 1,
+  end of TS_DOCUMENTITEMENT .
+  types:
+TT_DOCUMENTITEMENT type standard table of TS_DOCUMENTITEMENT .
+  types:
+  begin of TS_DOCUMENTHEADERENT,
+     LGNUM type C length 4,
+     DOCID type SYSUUID_X,
+     SCANHU type C length 20,
+     DOCCAT type C length 3,
+     DOCNO type C length 35,
+  end of TS_DOCUMENTHEADERENT .
+  types:
+TT_DOCUMENTHEADERENT type standard table of TS_DOCUMENTHEADERENT .
+  types:
+  begin of TS_USERCOMMANDENT,
+     LGNUM type C length 4,
+     USERCOMMAND type C length 2,
+     QTYCOUNTED type P length 16 decimals 14,
+     UOM type C length 3,
+     SCANHU type C length 20,
+     DOCID type X length 16,
+     ITEMID type X length 16,
+     SHOWMSG type C length 2,
+     DESTINATION type C length 10,
+     COMPLETED type C length 1,
+  end of TS_USERCOMMANDENT .
+  types:
+TT_USERCOMMANDENT type standard table of TS_USERCOMMANDENT .
+
+  constants GC_DOCUMENTHEADERENT type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'DocumentHeaderEnt' ##NO_TEXT.
+  constants GC_DOCUMENTITEMENT type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'DocumentItemEnt' ##NO_TEXT.
+  constants GC_PRODUCT type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'Product' ##NO_TEXT.
+  constants GC_QUANTITY type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'Quantity' ##NO_TEXT.
+  constants GC_SCANHANDLINGUNITENT type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'ScanHandlingUnitEnt' ##NO_TEXT.
+  constants GC_USERCOMMANDENT type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'UserCommandEnt' ##NO_TEXT.
+
+  methods LOAD_TEXT_ELEMENTS
+  final
+    returning
+      value(RT_TEXT_ELEMENTS) type TT_TEXT_ELEMENTS
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+
+  methods DEFINE
+    redefinition .
+  methods GET_LAST_MODIFIED
+    redefinition .
+protected section.
+private section.
+
+  constants GC_INCL_NAME type STRING value 'YCL_Y20_EWM_QUALITY_GA_MPC====CP' ##NO_TEXT.
+
+  methods DEFINE_COMPLEXTYPES
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods DEFINE_SCANHANDLINGUNITENT
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods DEFINE_DOCUMENTITEMENT
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods DEFINE_DOCUMENTHEADERENT
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods DEFINE_USERCOMMANDENT
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods DEFINE_ASSOCIATIONS
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+ENDCLASS.
+
+
+
+CLASS YCL_Y20_EWM_QUALITY_GA_MPC IMPLEMENTATION.
+
+
+  method DEFINE.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+model->set_schema_namespace( 'Y20_EWM_QUALITY_GATE_SRV' ).
+
+define_complextypes( ).
+define_scanhandlingunitent( ).
+define_documentitement( ).
+define_documentheaderent( ).
+define_usercommandent( ).
+define_associations( ).
+  endmethod.
+
+
+  method DEFINE_ASSOCIATIONS.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+
+
+data:
+lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,                   "#EC NEEDED
+lo_entity_type    type ref to /iwbep/if_mgw_odata_entity_typ,                   "#EC NEEDED
+lo_association    type ref to /iwbep/if_mgw_odata_assoc,                        "#EC NEEDED
+lo_ref_constraint type ref to /iwbep/if_mgw_odata_ref_constr,                   "#EC NEEDED
+lo_assoc_set      type ref to /iwbep/if_mgw_odata_assoc_set,                    "#EC NEEDED
+lo_nav_property   type ref to /iwbep/if_mgw_odata_nav_prop.                     "#EC NEEDED
+
+***********************************************************************************************************************************
+*   ASSOCIATIONS
+***********************************************************************************************************************************
+
+ lo_association = model->create_association(
+                            iv_association_name = 'ScanSource_DocItems' "#EC NOTEXT
+                            iv_left_type        = 'ScanHandlingUnitEnt' "#EC NOTEXT
+                            iv_right_type       = 'DocumentItemEnt' "#EC NOTEXT
+                            iv_right_card       = 'N' "#EC NOTEXT
+                            iv_left_card        = '1'  "#EC NOTEXT
+                            iv_def_assoc_set    = abap_false ). "#EC NOTEXT
+* Referential constraint for association - ScanSource_DocItems
+lo_ref_constraint = lo_association->create_ref_constraint( ).
+lo_ref_constraint->add_property( iv_principal_property = 'ScanHU'   iv_dependent_property = 'ScanHU' ). "#EC NOTEXT
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
+lo_assoc_set = model->create_association_set( iv_association_set_name  = 'ScanSource_DocItemsSet'                         "#EC NOTEXT
+                                              iv_left_entity_set_name  = 'ScanHandlingUnitSet'              "#EC NOTEXT
+                                              iv_right_entity_set_name = 'DocumentItemEntSet'             "#EC NOTEXT
+                                              iv_association_name      = 'ScanSource_DocItems' ).                                 "#EC NOTEXT
+
+ lo_association = model->create_association(
+                            iv_association_name = 'ScanSource_DocHeader' "#EC NOTEXT
+                            iv_left_type        = 'ScanHandlingUnitEnt' "#EC NOTEXT
+                            iv_right_type       = 'DocumentHeaderEnt' "#EC NOTEXT
+                            iv_right_card       = '1' "#EC NOTEXT
+                            iv_left_card        = '1'  "#EC NOTEXT
+                            iv_def_assoc_set    = abap_false ). "#EC NOTEXT
+* Referential constraint for association - ScanSource_DocHeader
+lo_ref_constraint = lo_association->create_ref_constraint( ).
+lo_ref_constraint->add_property( iv_principal_property = 'ScanHU'   iv_dependent_property = 'ScanHU' ). "#EC NOTEXT
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
+lo_assoc_set = model->create_association_set( iv_association_set_name  = 'ScanSource_DocHeaderSet'                         "#EC NOTEXT
+                                              iv_left_entity_set_name  = 'ScanHandlingUnitSet'              "#EC NOTEXT
+                                              iv_right_entity_set_name = 'DocumentHeaderSet'             "#EC NOTEXT
+                                              iv_association_name      = 'ScanSource_DocHeader' ).                                 "#EC NOTEXT
+
+ lo_association = model->create_association(
+                            iv_association_name = 'UserCommand_DocItems' "#EC NOTEXT
+                            iv_left_type        = 'UserCommandEnt' "#EC NOTEXT
+                            iv_right_type       = 'DocumentItemEnt' "#EC NOTEXT
+                            iv_right_card       = 'N' "#EC NOTEXT
+                            iv_left_card        = '1'  "#EC NOTEXT
+                            iv_def_assoc_set    = abap_true ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*   NAVIGATION PROPERTIES
+***********************************************************************************************************************************
+
+* Navigation Properties for entity - ScanHandlingUnitEnt
+lo_entity_type = model->get_entity_type( iv_entity_name = 'ScanHandlingUnitEnt' ). "#EC NOTEXT
+lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'DocumentHeaderEnt' "#EC NOTEXT
+                                                              iv_abap_fieldname = 'DOCUMENTHEADERENT' "#EC NOTEXT
+                                                              iv_association_name = 'ScanSource_DocHeader' ). "#EC NOTEXT
+lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'DocumentItemEntSet' "#EC NOTEXT
+                                                              iv_abap_fieldname = 'DOCUMENTITEMENTSET' "#EC NOTEXT
+                                                              iv_association_name = 'ScanSource_DocItems' ). "#EC NOTEXT
+* Navigation Properties for entity - UserCommandEnt
+lo_entity_type = model->get_entity_type( iv_entity_name = 'UserCommandEnt' ). "#EC NOTEXT
+lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'DocumentItemEntSet' "#EC NOTEXT
+                                                              iv_abap_fieldname = 'DOCUMENTITEMENTSET' "#EC NOTEXT
+                                                              iv_association_name = 'UserCommand_DocItems' ). "#EC NOTEXT
+  endmethod.
+
+
+  method DEFINE_COMPLEXTYPES.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+ data:
+       lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,             "#EC NEEDED
+       lo_complex_type   type ref to /iwbep/if_mgw_odata_cmplx_type,             "#EC NEEDED
+       lo_property       type ref to /iwbep/if_mgw_odata_property.                "#EC NEEDED
+
+***********************************************************************************************************************************
+*   COMPLEX TYPE - Product
+***********************************************************************************************************************************
+lo_complex_type = model->create_complex_type( 'Product' ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+lo_property = lo_complex_type->create_property( iv_property_name  = 'MATID' iv_abap_fieldname = 'MATID' ). "#EC NOTEXT
+lo_property->set_type_edm_guid( ).
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property = lo_complex_type->create_property( iv_property_name  = 'MATNR' iv_abap_fieldname = 'MATNR' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 40 ).
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property = lo_complex_type->create_property( iv_property_name  = 'MAKTX' iv_abap_fieldname = 'MAKTX' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 40 ).
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property = lo_complex_type->create_property( iv_property_name  = 'HndlCode' iv_abap_fieldname = 'HNDLCODE' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ).
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_complex_type->bind_structure( iv_structure_name = 'YCL_Y20_EWM_QUALITY_GA_MPC=>PRODUCT' ). "#EC NOTEXT
+***********************************************************************************************************************************
+*   COMPLEX TYPE - Quantity
+***********************************************************************************************************************************
+lo_complex_type = model->create_complex_type( 'Quantity' ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+lo_property = lo_complex_type->create_property( iv_property_name  = 'Quan' iv_abap_fieldname = 'QUAN' ). "#EC NOTEXT
+lo_property->set_type_edm_decimal( ).
+lo_property->set_precison( iv_precision = 14 ).
+lo_property->set_maxlength( iv_max_length = 31 ).
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property = lo_complex_type->create_property( iv_property_name  = 'Unit' iv_abap_fieldname = 'UNIT' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 3 ).
+lo_property->set_conversion_exit( 'CUNIT' ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_complex_type->bind_structure( iv_structure_name   = '/SCWM/S_QUAN'
+                                 iv_bind_conversions = 'X' ). "#EC NOTEXT
+  endmethod.
+
+
+  method DEFINE_DOCUMENTHEADERENT.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+  data:
+        lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,                "#EC NEEDED
+        lo_entity_type    type ref to /iwbep/if_mgw_odata_entity_typ,                "#EC NEEDED
+        lo_complex_type   type ref to /iwbep/if_mgw_odata_cmplx_type,                "#EC NEEDED
+        lo_property       type ref to /iwbep/if_mgw_odata_property,                  "#EC NEEDED
+        lo_entity_set     type ref to /iwbep/if_mgw_odata_entity_set.                "#EC NEEDED
+
+***********************************************************************************************************************************
+*   ENTITY - DocumentHeaderEnt
+***********************************************************************************************************************************
+
+lo_entity_type = model->create_entity_type( iv_entity_type_name = 'DocumentHeaderEnt' iv_def_entity_set = abap_false ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+
+lo_property = lo_entity_type->create_property( iv_property_name = 'Lgnum' iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'DocId' iv_abap_fieldname = 'DOCID' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_guid( ).
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'ScanHU' iv_abap_fieldname = 'SCANHU' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 20 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'DocCat' iv_abap_fieldname = 'DOCCAT' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 3 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'DocNo' iv_abap_fieldname = 'DOCNO' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 35 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+
+lo_entity_type->bind_structure( iv_structure_name  = 'YCL_Y20_EWM_QUALITY_GA_MPC=>TS_DOCUMENTHEADERENT' ). "#EC NOTEXT
+
+
+***********************************************************************************************************************************
+*   ENTITY SETS
+***********************************************************************************************************************************
+lo_entity_set = lo_entity_type->create_entity_set( 'DocumentHeaderSet' ). "#EC NOTEXT
+
+lo_entity_set->set_creatable( abap_false ).
+lo_entity_set->set_updatable( abap_false ).
+lo_entity_set->set_deletable( abap_false ).
+
+lo_entity_set->set_pageable( abap_false ).
+lo_entity_set->set_addressable( abap_false ).
+lo_entity_set->set_has_ftxt_search( abap_false ).
+lo_entity_set->set_subscribable( abap_false ).
+lo_entity_set->set_filter_required( abap_false ).
+  endmethod.
+
+
+  method DEFINE_DOCUMENTITEMENT.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+  data:
+        lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,                "#EC NEEDED
+        lo_entity_type    type ref to /iwbep/if_mgw_odata_entity_typ,                "#EC NEEDED
+        lo_complex_type   type ref to /iwbep/if_mgw_odata_cmplx_type,                "#EC NEEDED
+        lo_property       type ref to /iwbep/if_mgw_odata_property,                  "#EC NEEDED
+        lo_entity_set     type ref to /iwbep/if_mgw_odata_entity_set.                "#EC NEEDED
+
+***********************************************************************************************************************************
+*   ENTITY - DocumentItemEnt
+***********************************************************************************************************************************
+
+lo_entity_type = model->create_entity_type( iv_entity_type_name = 'DocumentItemEnt' iv_def_entity_set = abap_false ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+
+lo_property = lo_entity_type->create_property( iv_property_name = 'Lgnum' iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Docid' iv_abap_fieldname = 'DOCID' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '002' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_binary( ).
+lo_property->set_maxlength( iv_max_length = 16 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Itemid' iv_abap_fieldname = 'ITEMID' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '003' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_binary( ).
+lo_property->set_maxlength( iv_max_length = 16 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Docno' iv_abap_fieldname = 'DOCNO' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '004' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 35 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Itemno' iv_abap_fieldname = 'ITEMNO' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '005' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_complex_type = lo_entity_type->create_complex_property( iv_property_name = 'Product'
+                                                           iv_complex_type_name = 'Product'
+                                                           iv_abap_fieldname    = 'PRODUCT' ). "#EC NOTEXT
+lo_complex_type->set_label_from_text_element( iv_text_element_symbol = '006' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_complex_type = lo_entity_type->create_complex_property( iv_property_name = 'Qty'
+                                                           iv_complex_type_name = 'Quantity'
+                                                           iv_abap_fieldname    = 'QTY' ). "#EC NOTEXT
+lo_complex_type->set_label_from_text_element( iv_text_element_symbol = '007' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_complex_type = lo_entity_type->create_complex_property( iv_property_name = 'QtyCounted'
+                                                           iv_complex_type_name = 'Quantity'
+                                                           iv_abap_fieldname    = 'QTYCOUNTED' ). "#EC NOTEXT
+lo_complex_type->set_label_from_text_element( iv_text_element_symbol = '009' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_property = lo_entity_type->create_property( iv_property_name = 'ScanHU' iv_abap_fieldname = 'SCANHU' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 20 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Who' iv_abap_fieldname = 'WHO' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'TaskCount' iv_abap_fieldname = 'TASKCOUNT' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 3 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Counted' iv_abap_fieldname = 'COUNTED' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 1 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'CountedTimes' iv_abap_fieldname = 'COUNTEDTIMES' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 1 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Result' iv_abap_fieldname = 'RESULT' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 1 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+
+lo_entity_type->bind_structure( iv_structure_name  = 'YCL_Y20_EWM_QUALITY_GA_MPC=>TS_DOCUMENTITEMENT' ). "#EC NOTEXT
+
+
+***********************************************************************************************************************************
+*   ENTITY SETS
+***********************************************************************************************************************************
+lo_entity_set = lo_entity_type->create_entity_set( 'DocumentItemEntSet' ). "#EC NOTEXT
+
+lo_entity_set->set_creatable( abap_false ).
+lo_entity_set->set_updatable( abap_false ).
+lo_entity_set->set_deletable( abap_false ).
+
+lo_entity_set->set_pageable( abap_false ).
+lo_entity_set->set_addressable( abap_true ).
+lo_entity_set->set_has_ftxt_search( abap_false ).
+lo_entity_set->set_subscribable( abap_false ).
+lo_entity_set->set_filter_required( abap_false ).
+  endmethod.
+
+
+  method DEFINE_SCANHANDLINGUNITENT.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+  data:
+        lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,                "#EC NEEDED
+        lo_entity_type    type ref to /iwbep/if_mgw_odata_entity_typ,                "#EC NEEDED
+        lo_complex_type   type ref to /iwbep/if_mgw_odata_cmplx_type,                "#EC NEEDED
+        lo_property       type ref to /iwbep/if_mgw_odata_property,                  "#EC NEEDED
+        lo_entity_set     type ref to /iwbep/if_mgw_odata_entity_set.                "#EC NEEDED
+
+***********************************************************************************************************************************
+*   ENTITY - ScanHandlingUnitEnt
+***********************************************************************************************************************************
+
+lo_entity_type = model->create_entity_type( iv_entity_type_name = 'ScanHandlingUnitEnt' iv_def_entity_set = abap_false ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+
+lo_property = lo_entity_type->create_property( iv_property_name = 'Lgnum' iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_true ).
+lo_property->set_updatable( abap_true ).
+lo_property->set_sortable( abap_true ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_true ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'ScanHU' iv_abap_fieldname = 'SCANHU' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '001' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 20 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+
+lo_entity_type->bind_structure( iv_structure_name  = 'YCL_Y20_EWM_QUALITY_GA_MPC=>TS_SCANHANDLINGUNITENT' ). "#EC NOTEXT
+
+
+***********************************************************************************************************************************
+*   ENTITY SETS
+***********************************************************************************************************************************
+lo_entity_set = lo_entity_type->create_entity_set( 'ScanHandlingUnitSet' ). "#EC NOTEXT
+
+lo_entity_set->set_creatable( abap_false ).
+lo_entity_set->set_updatable( abap_false ).
+lo_entity_set->set_deletable( abap_false ).
+
+lo_entity_set->set_pageable( abap_false ).
+lo_entity_set->set_addressable( abap_false ).
+lo_entity_set->set_has_ftxt_search( abap_false ).
+lo_entity_set->set_subscribable( abap_false ).
+lo_entity_set->set_filter_required( abap_false ).
+  endmethod.
+
+
+  method DEFINE_USERCOMMANDENT.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+  data:
+        lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,                "#EC NEEDED
+        lo_entity_type    type ref to /iwbep/if_mgw_odata_entity_typ,                "#EC NEEDED
+        lo_complex_type   type ref to /iwbep/if_mgw_odata_cmplx_type,                "#EC NEEDED
+        lo_property       type ref to /iwbep/if_mgw_odata_property,                  "#EC NEEDED
+        lo_entity_set     type ref to /iwbep/if_mgw_odata_entity_set.                "#EC NEEDED
+
+***********************************************************************************************************************************
+*   ENTITY - UserCommandEnt
+***********************************************************************************************************************************
+
+lo_entity_type = model->create_entity_type( iv_entity_type_name = 'UserCommandEnt' iv_def_entity_set = abap_true ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+
+lo_property = lo_entity_type->create_property( iv_property_name = 'Lgnum' iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'UserCommand' iv_abap_fieldname = 'USERCOMMAND' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 2 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'QtyCounted' iv_abap_fieldname = 'QTYCOUNTED' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '010' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_decimal( ).
+lo_property->set_precison( iv_precision = 14 ). "#EC NOTEXT
+lo_property->set_maxlength( iv_max_length = 31 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Uom' iv_abap_fieldname = 'UOM' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '011' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 3 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'ScanHU' iv_abap_fieldname = 'SCANHU' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '012' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 20 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Docid' iv_abap_fieldname = 'DOCID' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '013' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_binary( ).
+lo_property->set_maxlength( iv_max_length = 16 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Itemid' iv_abap_fieldname = 'ITEMID' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '014' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_binary( ).
+lo_property->set_maxlength( iv_max_length = 16 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'showMsg' iv_abap_fieldname = 'SHOWMSG' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '015' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 2 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Destination' iv_abap_fieldname = 'DESTINATION' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '016' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'completed' iv_abap_fieldname = 'COMPLETED' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '017' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 1 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+
+lo_entity_type->bind_structure( iv_structure_name  = 'YCL_Y20_EWM_QUALITY_GA_MPC=>TS_USERCOMMANDENT' ). "#EC NOTEXT
+  endmethod.
+
+
+  method GET_LAST_MODIFIED.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20200728062818'.                  "#EC NOTEXT
+  rv_last_modified = super->get_last_modified( ).
+  IF rv_last_modified LT lc_gen_date_time.
+    rv_last_modified = lc_gen_date_time.
+  ENDIF.
+  endmethod.
+
+
+  method LOAD_TEXT_ELEMENTS.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+DATA:
+     ls_text_element TYPE ts_text_element.                                 "#EC NEEDED
+CLEAR ls_text_element.
+
+
+clear ls_text_element.
+ls_text_element-artifact_name          = 'ScanHU'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'ScanHandlingUnitEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '001'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+
+
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Docid'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'DocumentItemEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '002'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Itemid'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'DocumentItemEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '003'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Docno'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'DocumentItemEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '004'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Itemno'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'DocumentItemEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '005'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Product'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'DocumentItemEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '006'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Qty'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'DocumentItemEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '007'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'QtyCounted'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'DocumentItemEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '009'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+
+
+clear ls_text_element.
+ls_text_element-artifact_name          = 'QtyCounted'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UserCommandEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '010'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Uom'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UserCommandEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '011'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'ScanHU'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UserCommandEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '012'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Docid'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UserCommandEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '013'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Itemid'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UserCommandEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '014'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'showMsg'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UserCommandEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '015'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Destination'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UserCommandEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '016'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'completed'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UserCommandEnt'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '017'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+  endmethod.
+ENDCLASS.

@@ -1,0 +1,1525 @@
+CLASS y20_cl_odata_pp_hucreate DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    INTERFACES y20_if_odata_entity .
+    TYPES tyt_hutype_list TYPE STANDARD TABLE OF y20_cl_pick_prep_hucrt_mpc=>ts_hutypelistent WITH EMPTY KEY.
+
+    CONSTANTS mc_picktype TYPE y20_de_picktype VALUE 'M'.
+    "!<p class="shorttext synchronized">Constructor: Create instance of current class</p>
+    METHODS constructor
+      IMPORTING
+        is_keys TYPE y20_cl_pick_prep_hucrt_mpc_ext=>tys_entity_keys OPTIONAL
+        io_log  TYPE REF TO y20_cl_log
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+    TYPES:
+      "!<p class="shorttext synchronized">Type str: warehouse order</p>
+      BEGIN OF tys_who,
+        who    TYPE /scwm/who-who,
+        status TYPE /scwm/who-status,
+      END OF tys_who.
+    "!<p class="shorttext synchronized">Type table: warehouse order</p>
+    TYPES tyt_who TYPE STANDARD TABLE OF tys_who WITH EMPTY KEY.
+    TYPES: tyt_whohu TYPE STANDARD TABLE OF /scwm/whohu WITH EMPTY KEY.
+*    TYPES: helper_type TYPE c.
+    METHODS filter_dlv_by_poolmix
+      IMPORTING
+        iv_poolmix  TYPE c
+      CHANGING
+        ct_dlv_head TYPE /scwm/dlv_header_out_prd_tab.
+    ##NEEDED
+    "!<p class="shorttext synchronized">Message string</p>
+    DATA mv_msg TYPE string .
+    "!<p class="shorttext synchronized">Warehouse Number</p>
+    DATA mv_lgnum TYPE /scwm/s_t300-lgnum .
+    "!<p class="shorttext synchronized">Navigation key, indicates execution method</p>
+    DATA mv_key_navigation TYPE string .
+    "!<p class="shorttext synchronized">Message log</p>
+    DATA mo_log TYPE REF TO y20_cl_log.
+    DATA mv_aarea TYPE /scwm/de_aarea.
+    "!<p class="shorttext synchronized">Convert structure to reference data</p>
+    METHODS copy_data_to_ref
+      IMPORTING
+        is_data        TYPE any
+      RETURNING
+        VALUE(ro_data) TYPE REF TO data .
+    "!<p class="shorttext synchronized">Fill HUtype data for UI</p>
+    METHODS fill_hutype_list
+      IMPORTING
+        it_who                TYPE y20_cl_odata_pp_hucreate=>tyt_who
+        it_who_hutyp          TYPE /scwm/tt_whohu_int
+        it_ordim_o            TYPE /scwm/tt_ordim_o
+        it_deliv_head         TYPE /scwm/dlv_header_out_prd_tab
+      RETURNING
+        VALUE(rt_hutype_list) TYPE tyt_hutype_list.
+    "!<p class="shorttext synchronized">Apply consolidation filter</p>
+    METHODS filter_by_consolidation
+      IMPORTING
+        iv_consolide      TYPE c
+        it_who            TYPE y20_cl_odata_pp_hucreate=>tyt_who
+      RETURNING
+        VALUE(rt_ordim_o) TYPE /scwm/tt_ordim_o.
+    "!<p class="shorttext synchronized">Check warehouse number is valid</p>
+    METHODS validate_set_warehouse_number
+      IMPORTING
+        iv_lgnum TYPE /scwm/lgnum
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Determine HUtype for warehouse order</p>
+    METHODS read_hutyp_by_who
+      IMPORTING
+        it_who          TYPE y20_cl_odata_pp_hucreate=>tyt_who
+      RETURNING
+        VALUE(rt_whohu) TYPE /scwm/tt_whohu_int
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Read open tasks by WHO</p>
+    METHODS read_open_tasks_by_who
+      IMPORTING
+        it_who            TYPE y20_cl_odata_pp_hucreate=>tyt_who
+      RETURNING
+        VALUE(rt_ordim_o) TYPE /scwm/tt_ordim_o
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Raise exception</p>
+    METHODS raise_exception
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Get entity set of HU type list</p>
+    METHODS get_entityset_hutypelist
+      RETURNING
+        VALUE(ro_result) TYPE REF TO data
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Read default activity area</p>
+    METHODS read_aarea_default
+      RETURNING
+        VALUE(rv_aarea) TYPE /scwm/s_who_int-areawho
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Read warehouse order</p>
+    METHODS read_warehouse_order
+      IMPORTING
+        it_who         TYPE /scwm/tt_whoid
+        iv_lock_who    TYPE boole_d DEFAULT abap_false
+      RETURNING
+        VALUE(rt_whos) TYPE /scwm/tt_who_int
+      RAISING
+        /iwbep/cx_mgw_tech_exception .
+    "!<p class="shorttext synchronized">Query warehouse orders by activity area</p>
+    METHODS read_open_whos_by_aarea
+      IMPORTING
+        iv_aarea      TYPE /scwm/s_who_int-areawho
+      RETURNING
+        VALUE(rt_who) TYPE tyt_who
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Read deliveries by task reference</p>
+    METHODS read_delivery_heads_by_task
+      IMPORTING
+        it_ordim_o            TYPE /scwm/tt_ordim_o
+      RETURNING
+        VALUE(rt_dlv_headers) TYPE /scwm/dlv_header_out_prd_tab.
+    "!<p class="shorttext synchronized">Convert material key from X16 to X22</p>
+    METHODS conver_material_x16_to_x22
+      IMPORTING
+        iv_x16           TYPE /scwm/de_matid
+      RETURNING
+        VALUE(rv_result) TYPE /sapapo/matid.
+    "!<p class="shorttext synchronized">POST request: apply filters for HU type list</p>
+    METHODS create_deep_filter_hutypelist
+      IMPORTING
+        io_data_provider TYPE REF TO /iwbep/if_mgw_entry_provider
+      RETURNING
+        VALUE(ro_result) TYPE REF TO data
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Apply activity area filter</p>
+    METHODS filter_by_aarea
+      IMPORTING
+        iv_aarea      TYPE /scwm/de_aarea
+      RETURNING
+        VALUE(rt_who) TYPE y20_cl_odata_pp_hucreate=>tyt_who
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Filter by delivery poolname and time</p>
+    METHODS filter_by_pool_and_dlvtime
+      IMPORTING
+        iv_poolname          TYPE y20_de_zzpoolname
+        iv_poolmix           TYPE c
+        iv_dlvcompltime      TYPE timestamp
+        it_ordim_o           TYPE /scwm/tt_ordim_o
+      RETURNING
+        VALUE(rt_deliv_head) TYPE /scwm/dlv_header_out_prd_tab.
+    "!<p class="shorttext synchronized">POST request: Create/Assign HUs to WHO</p>
+    METHODS create_deep_new_whohus
+      IMPORTING
+        io_data_provider TYPE REF TO /iwbep/if_mgw_entry_provider
+      RETURNING
+        VALUE(ro_result) TYPE REF TO data
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Create HUs and assign to WHO</p>
+    METHODS create_assign_hus_to_whohus
+      IMPORTING
+        is_whohu        TYPE  /scwm/s_whohu
+        iv_lgpla        TYPE /scwm/de_lgpla
+      RETURNING
+        VALUE(rs_huhdr) TYPE /scwm/s_huhdr_int
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Read storage bin from parameter framework</p>
+    METHODS read_storage_bin_from_paramfrw
+      RETURNING
+        VALUE(rv_lgpla) TYPE /scwm/de_lgpla
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Update WHO with new HU</p>
+    METHODS update_whohu
+      IMPORTING
+        is_whohu TYPE /scwm/s_whohu
+        is_huhdr TYPE /scwm/s_huhdr_int
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    "!<p class="shorttext synchronized">Apply filters to HU type list</p>
+    METHODS filter_who_by_hutype_list
+      IMPORTING
+        is_hutype_list      TYPE y20_cl_pick_prep_hucrt_mpc=>ts_hutypelistent
+        it_who              TYPE tyt_who
+      RETURNING
+        VALUE(rt_who_hutyp) TYPE /scwm/tt_whohu_int
+      RAISING
+        /iwbep/cx_mgw_tech_exception.
+    METHODS read_whohus
+      IMPORTING
+        it_who          TYPE rseloption
+      RETURNING
+        VALUE(rt_whohu) TYPE tyt_whohu.
+    METHODS get_entityset_active_trolley
+      RETURNING
+        VALUE(ro_result) TYPE REF TO data.
+    METHODS read_who_for_multipick
+      IMPORTING
+        iv_aarea      TYPE /scwm/de_aarea OPTIONAL
+      RETURNING
+        VALUE(rt_who) TYPE /scwm/tt_who.
+ENDCLASS.
+
+
+
+CLASS y20_cl_odata_pp_hucreate IMPLEMENTATION.
+
+
+  METHOD constructor.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Create instance
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    mo_log = io_log.
+
+    IF is_keys IS SUPPLIED.
+      validate_set_warehouse_number( is_keys-lgnum ).
+      mv_aarea = is_keys-aarea.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD conver_material_x16_to_x22.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Convert material X16 to X22
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    TRY.
+        cl_system_uuid=>convert_uuid_x16_static(
+          EXPORTING
+            uuid     = iv_x16
+          IMPORTING
+            uuid_c22 = rv_result ).
+        ##NO_HANDLER
+      CATCH cx_uuid_error.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD copy_data_to_ref.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description :
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    FIELD-SYMBOLS: <ls_data> TYPE any.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    CREATE DATA ro_data LIKE is_data.
+    ASSIGN ro_data->* TO <ls_data>.
+    <ls_data> = is_data.
+  ENDMETHOD.
+
+
+  METHOD create_assign_hus_to_whohus.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Create HUs in location. Location is determined from
+*               parameter framework
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    /scwm/cl_tm=>cleanup( iv_lgnum = mv_lgnum ).
+*    /scwm/cl_tm=>register_cleanup_wt( ).
+
+    /scwm/cl_wm_packing=>get_instance( IMPORTING eo_instance = DATA(lo_pack) ).
+    lo_pack->init(
+      EXPORTING
+        iv_lgnum = mv_lgnum
+      EXCEPTIONS
+        error    = 1
+        OTHERS   = 2 ).
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO mv_msg.
+      raise_exception( ).
+    ENDIF.
+
+    lo_pack->create_hu(
+      EXPORTING
+        iv_pmat      = is_whohu-pmat_guid
+        i_location   = iv_lgpla
+      RECEIVING
+        es_huhdr     = rs_huhdr
+      EXCEPTIONS
+        error        = 1
+        OTHERS       = 2 ).
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO mv_msg.
+      mo_log->add_message( ).
+    ENDIF.
+
+    " assign new HU to the WHO
+    update_whohu( is_whohu = is_whohu
+                  is_huhdr = rs_huhdr ).
+
+    " save changes
+    lo_pack->save(
+      EXCEPTIONS
+        error     = 1
+        OTHERS    = 2 ).
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO mv_msg.
+      raise_exception( ).
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD create_deep_filter_hutypelist.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Execute POST request on filter entity with expanded
+*               entity HUTypeList
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA:
+      BEGIN OF ls_entity.
+        INCLUDE TYPE y20_cl_pick_prep_hucrt_mpc=>ts_filterent.
+    DATA: filter_hutypelist TYPE y20_cl_pick_prep_hucrt_mpc=>tt_hutypelistent,
+        filter_createdhu  TYPE y20_cl_pick_prep_hucrt_mpc=>tt_createdhuent,
+      END OF ls_entity.
+    DATA: lv_index TYPE i.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    io_data_provider->read_entry_data( IMPORTING es_data = ls_entity ).
+
+    validate_set_warehouse_number( ls_entity-lgnum ).
+
+    DATA(lt_who) = filter_by_aarea( iv_aarea = ls_entity-aarea ).
+
+    DATA(lt_who_hutyp) = read_hutyp_by_who( lt_who ).
+
+    DATA(lt_ordim_o) = filter_by_consolidation( iv_consolide = ls_entity-consolidate
+                                                it_who = lt_who ).
+    DATA(lt_deliv_head) = filter_by_pool_and_dlvtime( iv_poolname = ls_entity-poolname
+                                                      iv_poolmix = ls_entity-poolmix
+                                                      iv_dlvComplTime = ls_entity-ordercompltime
+                                                      it_ordim_o = lt_ordim_o ).
+
+    ls_entity-filter_hutypelist = fill_hutype_list( it_who        = lt_who
+                                                    it_who_hutyp  = lt_who_hutyp
+                                                    it_ordim_o    = lt_ordim_o
+                                                    it_deliv_head = lt_deliv_head ).
+*    DATA(lt_selopt_who) = VALUE rseloption( FOR <ls_who> IN ls_entity-filter_hutypelist
+*      ( sign   = wmegc_sign_inclusive
+*        option = wmegc_option_eq
+*        low    = <ls_who>-who ) ).
+*    DELETE lt_who_hutyp WHERE who NOT IN lt_selopt_who.
+
+    LOOP AT lt_who_hutyp ASSIGNING FIELD-SYMBOL(<ls_whohu>) WHERE huident IS NOT INITIAL.
+      lv_index = lv_index + 1.
+      APPEND VALUE #( seqno = lv_index
+                      huident = <ls_whohu>-huident
+                      hutype = <ls_whohu>-wstyp ) TO ls_entity-filter_createdhu.
+    ENDLOOP.
+
+    ro_result = copy_data_to_ref( is_data = ls_entity ).
+  ENDMETHOD.
+
+
+  METHOD create_deep_new_whohus.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Execute POST request: create new WHOHUs. Assign HU to WHO
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA:
+      BEGIN OF ls_entity.
+        INCLUDE TYPE y20_cl_pick_prep_hucrt_mpc=>ts_nonewhusent.
+    DATA: newhu_hutypelist TYPE y20_cl_pick_prep_hucrt_mpc=>ts_hutypelistent,
+        newhu_createdhu  TYPE y20_cl_pick_prep_hucrt_mpc=>tt_createdhuent,
+      END OF ls_entity.
+    DATA: lv_index TYPE i.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    io_data_provider->read_entry_data( IMPORTING es_data = ls_entity ).
+
+    DATA(lv_open_qty) = CONV i( ls_entity-newhu_hutypelist-open ).
+    DATA(lv_request_qty) = CONV i( ls_entity-quan ).
+    IF lv_open_qty < lv_request_qty.
+      MESSAGE e056(y20_ui5) INTO mv_msg.
+      raise_exception( ).
+    ENDIF.
+
+    validate_set_warehouse_number( ls_entity-lgnum ).
+
+    DATA(lt_who) = filter_by_aarea( iv_aarea = ls_entity-newhu_hutypelist-aarea ).
+
+    DATA(lt_who_hutyp) = filter_who_by_hutype_list( is_hutype_list = ls_entity-newhu_hutypelist
+                                                    it_who = lt_who ).
+
+    " get already existing lines in created HUs. append to these the new ones
+    DATA(lv_created_hus) = lines( ls_entity-newhu_createdhu ).
+
+    " determine storage location where new HUs will be created
+    DATA(lv_bin) = read_storage_bin_from_paramfrw( ).
+
+    " create new HUs and assign them to WHO
+    DO lv_request_qty TIMES.
+      lv_index = lv_index + 1.
+      ASSIGN lt_who_hutyp[ lv_index ] TO FIELD-SYMBOL(<ls_whohu>).
+      CHECK sy-subrc = 0.
+
+      DATA(ls_huhdr) = create_assign_hus_to_whohus( iv_lgpla = lv_bin
+                                                    is_whohu = <ls_whohu> ).
+      APPEND VALUE #( seqno   = lv_created_hus + 1
+                      huguid  = ls_huhdr-guid_hu
+                      huident = ls_huhdr-huident
+                      hutype  = ls_huhdr-letyp ) TO ls_entity-newhu_createdhu.
+    ENDDO.
+
+    " return data to UI
+    ro_result = copy_data_to_ref( ls_entity ).
+  ENDMETHOD.
+
+
+  METHOD fill_hutype_list.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Fill HU type table for UI display
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    LOOP AT it_who ASSIGNING FIELD-SYMBOL(<ls_who>).
+      DATA(ls_hutype_list) = VALUE y20_cl_pick_prep_hucrt_mpc=>ts_hutypelistent( ).
+      TRY.
+          DATA(ls_who_hutyp) = REF #( it_who_hutyp[ who = <ls_who>-who ] ).
+          DATA(ls_task) = REF #( it_ordim_o[ who = <ls_who>-who ] ).
+          DATA(ls_deliv) = REF #( it_deliv_head[ docid = ls_task->rdocid ] ).
+        CATCH cx_sy_itab_line_not_found.
+          CONTINUE.
+      ENDTRY.
+
+      ls_hutype_list-lgnum = mv_lgnum.
+      ls_hutype_list-aarea = ls_task->aarea.
+      ls_hutype_list-hutype = ls_who_hutyp->wstyp.
+      ls_hutype_list-pool = ls_deliv->eew-zzpoolname.
+      ls_hutype_list-priority = ls_deliv->sapext-/scwm/priority.
+      ls_hutype_list-who = ls_who_hutyp->who.
+      ls_hutype_list-total = 1.
+      ls_hutype_list-open = 1.
+      ls_hutype_list-linked = 0.
+      IF ls_who_hutyp->huident IS NOT INITIAL.
+        ls_hutype_list-linked = 1.
+        ls_hutype_list-open = 0.
+      ENDIF.
+
+      ASSIGN rt_hutype_list[ hutype = ls_hutype_list-hutype
+                             priority = ls_hutype_list-priority
+                             pool = ls_hutype_list-pool ] TO FIELD-SYMBOL(<ls_hutypgg>).
+      IF sy-subrc = 0.
+        <ls_hutypgg>-total = <ls_hutypgg>-total + 1.
+        <ls_hutypgg>-open = <ls_hutypgg>-open + ls_hutype_list-open.
+        <ls_hutypgg>-linked = <ls_hutypgg>-linked + ls_hutype_list-linked.
+      ELSE.
+        APPEND ls_hutype_list TO rt_hutype_list.
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD filter_by_aarea.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Get warehouse orders by activity area
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA: lv_aarea TYPE /scwm/s_who_int-areawho.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF iv_aarea IS INITIAL.
+      lv_aarea = read_aarea_default( ).
+    ELSE.
+      lv_aarea = iv_aarea.
+    ENDIF.
+
+    rt_who = read_open_whos_by_aarea( iv_aarea = lv_aarea ).
+  ENDMETHOD.
+
+
+  METHOD filter_by_consolidation.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Read Tasks by warehouse order and filter them by destination
+*               type(if task is for consolidation or not)
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    TRY.
+        rt_ordim_o = read_open_tasks_by_who( it_who = it_who ).
+      CATCH /iwbep/cx_mgw_tech_exception.
+        RETURN.
+    ENDTRY.
+    DATA(lv_nltyp) = CONV /scwm/ltap_nltyp( zswl_cl_param=>read_const(
+                                               iv_lgnum     = mv_lgnum
+                                               iv_context   = zswl_if_param_c=>mc_pick_prepare
+                                               iv_parameter = zswl_if_param_c=>mc_nltyp_01 ) ).
+    IF lv_nltyp IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    CASE iv_consolide.
+*      WHEN ''.
+        " Auto - consolidation does not matter
+      WHEN 1.
+        " Yes - Only task to storage type CONS
+        DELETE rt_ordim_o WHERE nltyp <> lv_nltyp.
+      WHEN 2.
+        " No - Only task to any storage type but CONS
+        DELETE rt_ordim_o WHERE nltyp = lv_nltyp.
+    ENDCASE.
+  ENDMETHOD.
+
+
+  METHOD filter_by_pool_and_dlvtime.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Apply filters from UI
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    DATA(lt_deliv_head) = read_delivery_heads_by_task( it_ordim_o ).
+
+    " filter by POOLNAME
+    IF iv_poolname IS NOT INITIAL.
+      LOOP AT lt_deliv_head ASSIGNING FIELD-SYMBOL(<ls_deliv>).
+        IF <ls_deliv>-eew-zzpoolname <> iv_poolname.
+          DELETE lt_deliv_head.
+        ENDIF.
+      ENDLOOP.
+    ENDIF.
+
+    " filter by POOLMIX
+    IF iv_poolmix IS NOT INITIAL.
+      filter_dlv_by_poolmix(
+        EXPORTING
+          iv_poolmix = iv_poolmix
+        CHANGING
+          ct_dlv_head = lt_deliv_head ).
+    ENDIF.
+
+    " filter by TDELIVERY
+    IF iv_dlvcompltime IS NOT INITIAL.
+      LOOP AT lt_deliv_head ASSIGNING FIELD-SYMBOL(<ls_deliv_time>).
+        ASSIGN <ls_deliv_time>-dates[ tsttype = /scdl/if_dl_date_c=>sc_tsttype_available ] TO FIELD-SYMBOL(<ls_dlv_time>).
+        CHECK sy-subrc = 0.
+
+        IF <ls_dlv_time>-tstto > iv_dlvcompltime.
+          DELETE lt_deliv_head.
+        ENDIF.
+      ENDLOOP.
+    ENDIF.
+
+    rt_deliv_head = lt_deliv_head.
+  ENDMETHOD.
+
+
+  METHOD filter_dlv_by_poolmix.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Filter deliveries by poolmix filter
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    DATA(lt_selopt_poolname) = VALUE rseloption( FOR <ls_dlv> IN ct_dlv_head
+                                  WHERE ( eew-zzpoolname IS NOT INITIAL )
+                                  ( sign   = wmegc_sign_inclusive
+                                    option = wmegc_option_eq
+                                    low    = <ls_dlv>-eew-zzpoolname ) ).
+    SORT lt_selopt_poolname BY low.
+    DELETE ADJACENT DUPLICATES FROM lt_selopt_poolname.
+
+    IF lines( lt_selopt_poolname ) = 0.
+      RETURN.
+    ENDIF.
+    " get king of poolmix wanted
+    DATA(lv_mixpool) = VALUE y20_de_mixpooltro( ).
+    CASE iv_poolmix.
+      WHEN 1.
+        " single pool
+        lv_mixpool = 'S'.
+      WHEN 2.
+        " mix pool - initial value
+    ENDCASE.
+
+    " query pools for single or mix pool
+    SELECT poolname FROM y20_t_poolname
+      INTO TABLE @DATA(lt_poolname)
+     WHERE lgnum = @mv_lgnum
+       AND poolname IN @lt_selopt_poolname
+       AND poolmixtro = @lv_mixpool.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    " remove deliveries with different pool name
+    LOOP AT ct_dlv_head ASSIGNING FIELD-SYMBOL(<ls_delivery>).
+      ASSIGN lt_poolname[ poolname = <ls_delivery>-eew-zzpoolname ] TO FIELD-SYMBOL(<ls_poolname>).
+      IF sy-subrc <> 0.
+        DELETE ct_dlv_head.
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD filter_who_by_hutype_list.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Filter WHOs by delivery data
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    DATA(lt_who_hutyp) = read_hutyp_by_who( it_who ).
+    " remove WHO which have different HUType
+    DELETE lt_who_hutyp WHERE wstyp <> is_hutype_list-hutype.
+    " remove WHO which already have HUs
+    DELETE lt_who_hutyp WHERE huident IS NOT INITIAL.
+    IF lines( lt_who_hutyp ) = 0.
+      RETURN.
+    ENDIF.
+
+    DATA(lt_ordim) = read_open_tasks_by_who( it_who = VALUE #( FOR <ls_who> IN lt_who_hutyp ( who = <ls_who>-who ) ) ).
+
+    DATA(lt_dlv_head) = read_delivery_heads_by_task( it_ordim_o = lt_ordim ).
+    IF lines( lt_dlv_head ) = 0.
+      RETURN.
+    ENDIF.
+
+    " remove deliveries with different POOLNAME
+    DELETE lt_dlv_head WHERE eew-zzpoolname <> is_hutype_list-pool.
+    " remove deliveries with different priority
+    DELETE lt_dlv_head WHERE sapext-/scwm/priority <> is_hutype_list-priority.
+
+    DATA(lt_selopt_docid) = VALUE rseloption( FOR <ls_docid> IN lt_dlv_head
+                                WHERE ( docid IS NOT INITIAL )
+                                ( sign   = wmegc_sign_inclusive
+                                  option = wmegc_option_eq
+                                  low    = <ls_docid>-docid ) ).
+    " remove tasks with REFDOCID that could make it
+    DELETE lt_ordim WHERE rdocid NOT IN lt_selopt_docid.
+
+    DATA(lt_selopt_who) = VALUE rseloption( FOR <ls_task> IN lt_ordim
+                             WHERE ( who IS NOT INITIAL )
+                             ( sign   = wmegc_sign_inclusive
+                               option = wmegc_option_eq
+                               low    = <ls_task>-who ) ).
+    " narrow down orders for what has left in tasks
+    DELETE lt_who_hutyp WHERE who NOT IN lt_selopt_who.
+
+    rt_who_hutyp = lt_who_hutyp.
+  ENDMETHOD.
+
+
+  METHOD get_entityset_hutypelist.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Get entity set of HU type list
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    DATA(lv_aarea) = read_aarea_default( ).
+
+    DATA(lt_who) = read_open_whos_by_aarea( lv_aarea ).
+
+    DATA(lt_who_hutyp) = read_hutyp_by_who( lt_who ).
+
+    DATA(lt_ordim_o) = read_open_tasks_by_who( it_who = lt_who ).
+
+    DATA(lt_deliv_head) = read_delivery_heads_by_task( lt_ordim_o ).
+
+    DATA(lt_hutype_list) = fill_hutype_list( it_who        = lt_who
+                                             it_who_hutyp  = lt_who_hutyp
+                                             it_ordim_o    = lt_ordim_o
+                                             it_deliv_head = lt_deliv_head ).
+
+    ro_result = copy_data_to_ref( is_data = lt_hutype_list ).
+  ENDMETHOD.
+
+
+  METHOD raise_exception.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description :
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    mo_log->add_message( ).
+    RAISE EXCEPTION NEW /iwbep/cx_mgw_tech_exception(
+        textid = VALUE #( msgno = sy-msgno
+                          msgid = sy-msgid
+                          attr1 = sy-msgv1
+                          attr2 = sy-msgv2
+                          attr3 = sy-msgv3
+                          attr4 = sy-msgv4 ) ).
+  ENDMETHOD.
+
+
+  METHOD read_aarea_default.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Read default activity area. Select WO from /SCWM/WO_RSRC_TY
+*               by priority and latest start date. Get activity area from
+*               warehouse order
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    CONSTANTS lc_tab_name TYPE string VALUE '/SCWM/WO_RSRC_TY'.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    DATA(lv_def_queue) = CONV /scwm/de_queue( zswl_cl_param=>read_const(
+        iv_lgnum     = mv_lgnum
+        iv_context   = zswl_if_param_c=>mc_pick_prepare
+        iv_parameter = zswl_if_param_c=>mc_pp_hucre_queue_def ) ).
+    IF lv_def_queue IS INITIAL.
+      MESSAGE e055(y20_ui5) INTO mv_msg.
+      raise_exception( ).
+    ENDIF.
+    " query WHO. Do sort by priority and LSD
+    SELECT who, lsd, priority FROM /scwm/wo_rsrc_ty
+      INTO TABLE @DATA(lt_rsrc_ty)
+     WHERE lgnum = @mv_lgnum
+       AND queue = @lv_def_queue.
+    IF sy-subrc <> 0.
+      MESSAGE e009(33) WITH '' lc_tab_name INTO mv_msg.
+      raise_exception( ).
+    ENDIF.
+
+    SORT lt_rsrc_ty BY priority DESCENDING lsd ASCENDING.
+
+    DATA(lt_warehouse_order) = read_warehouse_order( it_who = VALUE #( FOR <ls_rsrc> IN lt_rsrc_ty ( who = <ls_rsrc>-who ) ) ).
+
+    LOOP AT lt_warehouse_order ASSIGNING FIELD-SYMBOL(<ls_who>).
+      CHECK <ls_who>-areawho IS NOT INITIAL.
+      rv_aarea = <ls_who>-areawho.
+      EXIT.
+    ENDLOOP.
+
+    IF rv_aarea IS INITIAL.
+      MESSAGE e058(y20_ui5) INTO mv_msg.
+      raise_exception( ).
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD read_delivery_heads_by_task.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Read deliveries by task reference
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    DATA(lt_docid) = VALUE /scwm/dlv_docid_item_tab( FOR <ls_task> IN it_ordim_o
+        ( doccat = <ls_task>-rdoccat
+          docid = <ls_task>-rdocid ) ).
+
+    DATA(lo_dlv) = /scwm/cl_dlv_management_prd=>get_instance( ).
+    DATA(ls_read_options) = VALUE /scwm/dlv_query_contr_str( data_retrival_only = abap_true ).
+    TRY.
+        lo_dlv->query(
+          EXPORTING
+            it_docid        = lt_docid
+            is_read_options = ls_read_options
+          IMPORTING
+            et_headers      = rt_dlv_headers ).
+      CATCH  /scdl/cx_delivery.
+        LOG-POINT ID y20_odata_pick_prepare_hucrt FIELDS lt_docid rt_dlv_headers.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD read_hutyp_by_who.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Read HU type by who. First read pack material type - from
+*               pack material get HU type
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA: lt_whohu TYPE /scwm/tt_whohu_int.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF lines( it_who ) = 0.
+      MESSAGE e060(y20_ui5) INTO mv_msg.
+      raise_exception( ).
+    ENDIF.
+
+    TRY.
+        CALL FUNCTION '/SCWM/WHO_GET_MULTI'
+          EXPORTING
+            iv_lgnum       = mv_lgnum
+            it_whoid_range = VALUE rsds_selopt_t( FOR <ls_who> IN it_who
+                                                  WHERE ( who IS NOT INITIAL )
+                                                  ( sign   = wmegc_sign_inclusive
+                                                    option = wmegc_option_eq
+                                                    low    = <ls_who>-who ) )
+          IMPORTING
+            et_whohu       = lt_whohu.
+        ##NO_HANDLER
+      CATCH /scwm/cx_core.
+    ENDTRY.
+
+    IF lines( lt_whohu ) = 0.
+      MESSAGE e060(y20_ui5) INTO mv_msg.
+      raise_exception( ).
+    ENDIF.
+
+    " create selection option table with pack material IDs. Convert IDs to X22
+    DATA(lt_matid) = VALUE rseloption( FOR <ls_whohu> IN lt_whohu
+        WHERE ( pmat_guid IS NOT INITIAL )
+        ( sign   = wmegc_sign_inclusive
+          option = wmegc_option_eq
+          low    = conver_material_x16_to_x22( <ls_whohu>-pmat_guid ) ) ).
+
+    " query HU type
+    SELECT matid, hutyp                                 "#EC CI_NOORDER
+      FROM /sapapo/matpack
+      INTO TABLE @DATA(lt_matpack)
+      WHERE matid IN @lt_matid.
+    IF sy-subrc <> 0.
+      LOG-POINT ID y20_odata_pick_prepare_hucrt FIELDS lt_matid.
+      RETURN.
+    ENDIF.
+
+    " use field WSTYP as mapping field for HU type
+    LOOP AT lt_whohu ASSIGNING FIELD-SYMBOL(<ls_whohu_up>).
+      ASSIGN lt_matpack[ matid = conver_material_x16_to_x22( <ls_whohu_up>-pmat_guid ) ] TO FIELD-SYMBOL(<ls_matpack>).
+      CHECK sy-subrc = 0.
+      <ls_whohu_up>-wstyp = <ls_matpack>-hutyp.
+    ENDLOOP.
+
+    rt_whohu = lt_whohu.
+  ENDMETHOD.
+
+
+  METHOD read_open_tasks_by_who.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Read Tasks by warehouse order
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    CALL FUNCTION '/SCWM/TO_READ_MULT'
+      EXPORTING
+        iv_lgnum    = mv_lgnum
+        ir_who      = VALUE rseloption( FOR <ls_who> IN it_who ( sign   = wmegc_sign_inclusive
+                                                                 option = wmegc_option_eq
+                                                                 low    = <ls_who>-who ) )
+      IMPORTING
+        et_ordim_o  = rt_ordim_o
+      EXCEPTIONS
+        wrong_input = 1
+        not_found   = 2
+        OTHERS      = 3.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO mv_msg.
+      raise_exception( ).
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD read_open_whos_by_aarea.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Query warehouse orders by activity area
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF iv_aarea IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT who, status FROM /scwm/who
+      INTO TABLE @DATA(lt_who)
+     WHERE lgnum = @mv_lgnum
+       AND status = @wmegc_wo_open
+       AND areawho = @iv_aarea.
+    IF sy-subrc <> 0.
+      MESSAGE e059(y20_ui5) WITH iv_aarea INTO mv_msg.
+      raise_exception( ).
+    ENDIF.
+
+    rt_who = lt_who.
+  ENDMETHOD.
+
+
+  METHOD read_storage_bin_from_paramfrw.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Read Storage location from parameter framework
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    rv_lgpla = zswl_cl_param=>read_const( iv_lgnum     = mv_lgnum
+                                          iv_context   = zswl_if_param_c=>mc_pick_prepare
+                                          iv_parameter = zswl_if_param_c=>mc_storage_bin ).
+    IF rv_lgpla IS INITIAL.
+      MESSAGE e057(y20_ui5) INTO mv_msg.
+      raise_exception( ).
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD read_warehouse_order.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Read Warehouse Order
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    TRY.
+        CALL FUNCTION '/SCWM/WHO_SELECT'
+          EXPORTING
+            iv_lgnum    = mv_lgnum
+            it_who      = it_who
+            iv_lock_who = iv_lock_who
+          IMPORTING
+            et_who      = rt_whos.
+      CATCH /scwm/cx_core.
+        ##NEEDED
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+           WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO DATA(lv_msg).
+        raise_exception( ).
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD update_whohu.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Assign HU to the WHO
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    DATA: lt_bapiret TYPE bapirettab.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    DATA(ls_whohu) = is_whohu.
+    ls_whohu-huident = is_huhdr-huident.
+    ls_whohu-updkz = cmpt2_updkz_update.
+    ##ENH_OK
+    DATA(lt_whohu) = VALUE /scwm/tt_whohu_maint( ( CORRESPONDING #( ls_whohu ) ) ).
+    CALL FUNCTION '/SCWM/WHO_WHOHU_MAINT'
+      EXPORTING
+        iv_lgnum   = mv_lgnum
+        iv_who     = is_whohu-who
+        it_whohu   = lt_whohu
+      IMPORTING
+        et_bapiret = lt_bapiret.
+    LOOP AT lt_bapiret ASSIGNING FIELD-SYMBOL(<ls_bapiret>) WHERE type CA wmegc_severity_ea.
+      MESSAGE ID <ls_bapiret>-id TYPE <ls_bapiret>-type NUMBER <ls_bapiret>-number
+         WITH <ls_bapiret>-message_v1 <ls_bapiret>-message_v2 <ls_bapiret>-message_v3 <ls_bapiret>-message_v4
+         INTO mv_msg.
+      raise_exception( ).
+    ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD validate_set_warehouse_number.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description :
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    CONSTANTS lc_tab_name TYPE string VALUE '/SCWM/T300'.
+    DATA: ls_t300 TYPE /scwm/s_t300.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    CALL FUNCTION '/SCWM/T300_READ_SINGLE'
+      EXPORTING
+        iv_lgnum  = iv_lgnum
+      IMPORTING
+        es_t300   = ls_t300
+      EXCEPTIONS
+        not_found = 1
+        OTHERS    = 2.
+    IF sy-subrc <> 0 OR ls_t300-lgnum IS INITIAL.
+      ##NEEDED
+      MESSAGE e009(33) WITH iv_lgnum lc_tab_name INTO DATA(lv_msg).
+      raise_exception( ).
+    ENDIF.
+
+    mv_lgnum = ls_t300-lgnum.
+  ENDMETHOD.
+
+
+  METHOD y20_if_odata_entity~create_deep_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : POST request for complex entities
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    CASE mv_key_navigation.
+      WHEN y20_cl_pick_prep_hucrt_mpc_ext=>ms_method_key-filter_hutypelist.
+        ro_deep_entity = create_deep_filter_hutypelist( io_data_provider = io_data_provider ).
+
+      WHEN y20_cl_pick_prep_hucrt_mpc_ext=>ms_method_key-crete_newhus.
+        ro_deep_entity = create_deep_new_whohus( io_data_provider = io_data_provider ).
+
+    ENDCASE.
+  ENDMETHOD.
+
+
+  METHOD y20_if_odata_entity~get_entityset.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Get entity set
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    CASE mv_key_navigation.
+      WHEN y20_cl_pick_prep_hucrt_mpc_ext=>ms_method_key-hutypelist.
+        ro_entityset = get_entityset_hutypelist( ).
+
+      WHEN y20_cl_pick_prep_hucrt_mpc_ext=>ms_method_key-active_trolley.
+        ro_entityset = get_entityset_active_trolley( ).
+    ENDCASE.
+  ENDMETHOD.
+
+
+  METHOD y20_if_odata_entity~set_execute_method.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Set execution method
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    mv_key_navigation = iv_key.
+  ENDMETHOD.
+
+  METHOD read_whohus.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Read WHO-HUs
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF lines( it_who ) = 0.
+      RETURN.
+    ENDIF.
+
+    SELECT * FROM /scwm/whohu
+      INTO TABLE @DATA(lt_whohu)
+     WHERE lgnum = @mv_lgnum
+       AND who   IN @it_who.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    rt_whohu = lt_whohu.
+  ENDMETHOD.
+
+
+  METHOD get_entityset_active_trolley.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : GET request: Determine active trolleys
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+    DATA: lt_act_trolleys TYPE y20_cl_pick_prep_hucrt_mpc=>tt_activetrolleyent,
+          cs_rsrc         TYPE /scwm/rsrc,
+          ct_wo_rsrc_ty   TYPE /scwm/tt_wo_rsrc_ty,
+          lv_index        TYPE i,
+          lv_seqno        TYPE i.
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+*    DATA(lt_who) = read_who_for_multipick( iv_aarea = mv_aarea ).
+*
+*    TRY.
+*        DATA(lt_whohu) = read_hutyp_by_who( it_who = VALUE #( FOR <ls_who> IN lt_who ( who = <ls_who>-who ) )  ).
+*      CATCH /iwbep/cx_mgw_tech_exception.
+*        "handle exception
+*    ENDTRY.
+*
+*    SELECT * FROM /scwm/wo_rsrc_ty
+*      INTO TABLE @DATA(lt_who_rsrc)
+*       FOR ALL ENTRIES IN @lt_who
+*     WHERE lgnum = @mv_lgnum
+*       AND who = @lt_who-who.
+*    IF sy-subrc <> 0.
+*      RETURN.
+*    ENDIF.
+*
+*    DATA(lv_total) = lines( lt_who ).
+*    LOOP AT lt_who_rsrc ASSIGNING FIELD-SYMBOL(<ls_who_ty>)
+*                        GROUP BY ( rsrc = <ls_who_ty>-rsrc
+*                                   size = GROUP SIZE )
+*                        ASSIGNING FIELD-SYMBOL(<ls_rsrc>).
+*      lv_index = lv_index + 1.
+*      DATA(lv_not_ass) = lv_total - <ls_rsrc>-size.
+*      IF lv_not_ass < 0.
+*        lv_not_ass = 0.
+*      ENDIF.
+*      APPEND VALUE #( lgnum = mv_lgnum
+*                      seqno = lv_index
+*                      trolley = <ls_rsrc>-rsrc
+*                      aarea = mv_aarea
+*                      tot = lv_total
+*                      ass = <ls_rsrc>-size
+*                      nas = lv_not_ass ) TO lt_act_trolleys.
+*
+*    ENDLOOP.
+    DATA(lv_result) =  zswl_cl_param=>read_const( iv_lgnum     = mv_lgnum
+                                                  iv_context   = zswl_if_param_c=>mc_pick_prepare
+                                                  iv_parameter = zswl_if_param_c=>mc_pp_hucre_queue_def ).
+    DATA(lv_queue) = CONV /scwm/de_queue( lv_result ).
+
+    DATA(lt_selopt_status) = VALUE rseloption(
+      ( sign   = wmegc_sign_inclusive
+        option = wmegc_option_eq
+        low    = wmegc_wo_open )
+      ( sign   = wmegc_sign_inclusive
+        option = wmegc_option_eq
+        low    = wmegc_wo_in_process )
+      ( sign   = wmegc_sign_inclusive
+        option = wmegc_option_eq
+        low    = wmegc_wo_on_hold ) ).
+
+    SELECT a~who, a~rsrc, b~areawho, b~queue
+      FROM /scwm/wo_rsrc_ty AS a
+      JOIN /scwm/who AS b
+        ON a~who = b~who
+      INTO TABLE @DATA(lt_who)
+     WHERE b~lgnum   = @mv_lgnum
+       AND b~status IN @lt_selopt_status
+       AND b~queue   = @lv_queue
+       AND a~lgnum   = @mv_lgnum.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    DELETE ADJACENT DUPLICATES FROM lt_who COMPARING who rsrc.
+
+    LOOP AT lt_who ASSIGNING FIELD-SYMBOL(<ls_area>)
+                       GROUP BY ( areawho = <ls_area>-areawho
+                                  rsrc = <ls_area>-rsrc
+                                  size = GROUP SIZE )
+                   ASSIGNING FIELD-SYMBOL(<ls_rsrc_who>).
+      CHECK <ls_rsrc_who>-rsrc IS NOT INITIAL.
+
+      DATA(lv_not_ass) = 0.
+      " read RSRC WHO table with initial resources. This will be the number of not assigned WHO
+      LOOP AT lt_who ASSIGNING FIELD-SYMBOL(<ls_not_ass>) WHERE areawho = <ls_rsrc_who>-areawho
+                                                            AND rsrc IS INITIAL.
+        lv_not_ass = lv_not_ass + 1.
+      ENDLOOP.
+
+      lv_seqno = lv_seqno + 1.
+      APPEND VALUE #( aarea = <ls_rsrc_who>-areawho
+                      lgnum = mv_lgnum
+                      trolley = <ls_rsrc_who>-rsrc
+                      seqno = lv_seqno
+                      ass = <ls_rsrc_who>-size
+                      nas = lv_not_ass ) TO lt_act_trolleys.
+    ENDLOOP.
+
+    ro_result = copy_data_to_ref( is_data = lt_act_trolleys ).
+  ENDMETHOD.
+
+
+  METHOD read_who_for_multipick.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Select all WHO for multi picking
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    DATA(lt_selopt_stat) = VALUE rseloption(
+      ( sign   = wmegc_sign_inclusive
+        option = wmegc_option_eq
+        low    = wmegc_wo_open )
+      ( sign   = wmegc_sign_inclusive
+        option = wmegc_option_eq
+        low    = wmegc_wo_on_hold )
+      ( sign   = wmegc_sign_inclusive
+        option = wmegc_option_eq
+        low    = wmegc_wo_in_process ) ).
+    DATA(lv_prep_queue) = zswl_cl_param=>read_const(
+                       iv_lgnum     = mv_lgnum
+                       iv_context   = zswl_if_param_c=>mc_pick_prepare
+                       iv_parameter = zswl_if_param_c=>mc_pp_hucre_queue_def ).
+
+    SELECT a~* FROM /scwm/who AS a
+     INNER JOIN y20_t_twcrfilter AS b
+        ON a~wcr = b~filterid
+      INTO TABLE @DATA(lt_who)
+     WHERE b~lgnum = @mv_lgnum
+       AND b~picktype = @mc_picktype
+       AND a~lgnum = @mv_lgnum
+       AND a~status IN @lt_selopt_stat
+       AND a~areawho = @iv_aarea
+       AND a~queue = @lv_prep_queue.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    rt_who = lt_who.
+  ENDMETHOD.
+
+ENDCLASS.

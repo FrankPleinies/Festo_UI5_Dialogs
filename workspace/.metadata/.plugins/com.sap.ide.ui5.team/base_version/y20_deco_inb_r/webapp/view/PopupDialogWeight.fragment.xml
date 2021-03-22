@@ -1,0 +1,74 @@
+<core:FragmentDefinition xmlns="sap.m"
+    xmlns:l="sap.ui.layout"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:core="sap.ui.core">
+    <Dialog title="{i18n>weightMeasurment}" id="popupDialogWeight" class="sapUiSizeCozy sapUiContentPadding">
+
+
+        <f:Form id="dialogWeightForm" editable="true">
+            <f:title>
+                <core:Title icon="sap-icon://message-popup" text="{i18n>measureSinglePiece}" />
+            </f:title>
+            <f:layout>
+                <f:ResponsiveGridLayout labelSpanXL="3" labelSpanL="3" labelSpanM="3" labelSpanS="12" adjustLabelSpan="false" emptySpanXL="4" emptySpanL="4" emptySpanM="4" emptySpanS="0" columnsXL="1" columnsL="1" columnsM="1" singleContainerFullSize="false" />
+            </f:layout>
+            <f:formContainers>
+                <f:FormContainer>
+                    <f:formElements>
+
+                        <f:FormElement label="{i18n>measureSinglePieceInGram}" required="true">
+                            <f:fields>
+                                <Input liveChange="handleUserInput" value="{measureModel>/Weight/Quan}"/>
+                            </f:fields>
+                        </f:FormElement>
+                    </f:formElements>
+                </f:FormContainer>
+            </f:formContainers>
+        </f:Form>
+
+
+        <f:Form editable="true">
+            <f:title>
+                <core:Title icon="sap-icon://message-popup" text="{i18n>additional}" />
+            </f:title>
+            <f:layout>
+                <f:ResponsiveGridLayout labelSpanXL="3" labelSpanL="3" labelSpanM="3" labelSpanS="12" adjustLabelSpan="false" emptySpanXL="4" emptySpanL="4" emptySpanM="4" emptySpanS="0" columnsXL="1" columnsL="1" columnsM="1" singleContainerFullSize="false" />
+            </f:layout>
+            <f:formContainers>
+                <f:FormContainer>
+                    <f:formElements>
+
+                        <f:FormElement label="{i18n>height}" required="true">
+                            <f:fields>
+                                <Input liveChange="handleUserInput" value="{measureModel>/Height/Quan}"/>
+                            </f:fields>
+                        </f:FormElement>
+                        <f:FormElement label="{i18n>width}" required="true">
+                            <f:fields>
+                                <Input liveChange="handleUserInput" value="{measureModel>/Width/Quan}"/>
+                            </f:fields>
+                        </f:FormElement>
+                        <f:FormElement label="{i18n>length}" required="true">
+                            <f:fields>
+                                <Input liveChange="handleUserInput" value="{measureModel>/Length/Quan}"/>
+                            </f:fields>
+                        </f:FormElement>
+                        <f:FormElement label="{i18n>unit}" required="true">
+                            <f:fields>
+                                <Input liveChange="handleUserInput" value="{measureModel>/Height/Unit}"/>
+                            </f:fields>
+                        </f:FormElement>
+                    </f:formElements>
+                </f:FormContainer>
+            </f:formContainers>
+        </f:Form>
+
+
+
+
+        <buttons>
+            <Button text="{i18n>confirm}" press="onConfirmWeightDialog"/>
+            <Button text="{i18n>close}" press="onCloseWeightDialog" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

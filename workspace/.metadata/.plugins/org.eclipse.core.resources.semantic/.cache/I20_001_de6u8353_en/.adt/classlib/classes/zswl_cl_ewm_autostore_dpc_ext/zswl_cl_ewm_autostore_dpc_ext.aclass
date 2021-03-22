@@ -1,0 +1,1078 @@
+class ZSWL_CL_EWM_AUTOSTORE_DPC_EXT definition
+  public
+  inheriting from ZSWL_CL_EWM_AUTOSTORE_DPC
+  create public .
+
+public section.
+
+  methods CALL_AS_IF
+    importing
+      !IV_METHOD type CHAR20
+    returning
+      value(RS_DATA) type ZSWL_CL_EWM_AUTOSTORE_MPC=>TS_ASINFRESPONSE
+    raising
+      ZCX_EWM_GENERAL_EXCEPTION
+      /IWBEP/CX_MGW_BUSI_EXCEPTION
+      /IWBEP/CX_MGW_TECH_EXCEPTION .
+
+  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~EXECUTE_ACTION
+    redefinition .
+  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~GET_EXPANDED_ENTITY
+    redefinition .
+protected section.
+
+  data GV_LGNUM type /SCWM/LGNUM .
+  data GV_WORKSTATION type ZSWL_DE_WORKSTATION .
+  data GV_SIMULATION_MODE type ABAP_BOOL value ABAP_FALSE ##NO_TEXT.
+  data GV_ASBINID type ZSWL_DE_AS_CONT_CODE .
+
+  methods ASBINSET_CREATE_ENTITY
+    redefinition .
+private section.
+
+  methods DETERMINE_NEXT_POOL_RP
+    importing
+      !IR_WS type ref to ZSWL_CL_WORKSTATION
+    changing
+      !CS_REQUEST type ZSWL_S_AS_IF_REQUEST .
+  methods HANDLE_RESPONSE_ERROR
+    importing
+      !IS_RESPONSE type ZSWL_S_AS_IF_RESPONSE
+      !IV_TEXT type STRING optional
+      !IR_WS type ref to ZSWL_CL_WORKSTATION
+      !IS_REQUEST type ZSWL_S_AS_IF_REQUEST
+    raising
+      /IWBEP/CX_MGW_TECH_EXCEPTION
+      /IWBEP/CX_MGW_BUSI_EXCEPTION .
+  methods HANDLE_CHANGELAYOUT
+    importing
+      !IT_PARAMETER type /IWBEP/T_MGW_NAME_VALUE_PAIR optional
+    returning
+      value(RS_DATA) type ZSWL_CL_EWM_AUTOSTORE_MPC=>TS_ASINFRESPONSE .
+  methods HANDLE_WS_RUNOUTMODE
+    importing
+      !IT_PARAMETER type /IWBEP/T_MGW_NAME_VALUE_PAIR optional .
+  methods FILL_REQUEST_DATA
+    importing
+      !IR_WS type ref to ZSWL_CL_WORKSTATION
+    changing
+      !CS_REQUEST type ZSWL_S_AS_IF_REQUEST .
+  methods INSERT_BIN
+    importing
+      !IO_DATA_PROVIDER type ref to /IWBEP/IF_MGW_ENTRY_PROVIDER optional
+    returning
+      value(RR_ENTITY) type ZSWL_CL_EWM_AUTOSTORE_MPC=>TS_ASBIN .
+  methods READHU
+    importing
+      !IT_KEY_TAB type /IWBEP/T_MGW_NAME_VALUE_PAIR optional
+    returning
+      value(RR_ENTITY) type ref to DATA .
+  methods RAISE_BUSI_EXCEPTION
+    raising
+      /IWBEP/CX_MGW_BUSI_EXCEPTION .
+ENDCLASS.
+
+
+
+CLASS ZSWL_CL_EWM_AUTOSTORE_DPC_EXT IMPLEMENTATION.
+
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~execute_action.
+
+    DATA: lr_response TYPE zswl_cl_ewm_autostore_mpc=>ts_asinfresponse.
+
+    IF it_parameter IS NOT INITIAL.
+
+* Read Function import parameter value
+      READ TABLE it_parameter INTO DATA(ls_parameter) WITH KEY name = 'Lgnum'.
+      IF sy-subrc = 0.
+        gv_lgnum = ls_parameter-value.
+      ENDIF.
+
+      READ TABLE it_parameter INTO ls_parameter WITH KEY name = 'Workstation'.
+      IF sy-subrc = 0.
+        gv_workstation = ls_parameter-value.
+      ENDIF.
+
+      "Request manually an AS Bin
+      READ TABLE it_parameter INTO ls_parameter WITH KEY name = 'BinId'.
+      IF sy-subrc = 0.
+        gv_asbinid = ls_parameter-value.
+      ENDIF.
+
+    ENDIF.
+
+      "Run im simulation mode for testing
+*    gv_simulation_mode = abap_true.
+    try.
+    CASE iv_action_name.
+      WHEN zswl_cl_ewm_autostore_mpc_ext=>gc_func_openport.
+        "Call method
+        lr_response = call_as_if( zswl_cl_services_autostore=>gc_method_openport ).
+      WHEN zswl_cl_ewm_autostore_mpc_ext=>gc_func_closeport.
+        "Call method
+        lr_response = call_as_if( zswl_cl_services_autostore=>gc_method_closeport ).
+      WHEN zswl_cl_ewm_autostore_mpc_ext=>gc_func_openbin.
+        "Call method
+        lr_response = call_as_if( zswl_cl_services_autostore=>gc_method_openbin ).
+      WHEN zswl_cl_ewm_autostore_mpc_ext=>gc_func_closebin.
+        "Call method
+        lr_response = call_as_if( zswl_cl_services_autostore=>gc_method_closebin ).
+      WHEN zswl_cl_ewm_autostore_mpc_ext=>gc_func_getportstatus.
+        "Call method
+        lr_response = call_as_if( zswl_cl_services_autostore=>gc_method_getportstatus ).
+      WHEN 'SetWSRunoutMode'.
+        "Call method
+        handle_WS_RunoutMode( it_parameter ).
+      WHEN zswl_cl_ewm_autostore_mpc_ext=>gc_func_changeLayout.
+        "Call method
+        handle_changeLayout( it_parameter ).
+      WHEN OTHERS.
+    ENDCASE.
+    catch zcx_ewm_general_exception into DATA(lr_exc).
+      raise_busi_exception( ).
+    endtry.
+**TRY.
+*CALL METHOD SUPER->/IWBEP/IF_MGW_APPL_SRV_RUNTIME~EXECUTE_ACTION
+**  EXPORTING
+**    iv_action_name          =
+**    it_parameter            =
+**    io_tech_request_context =
+**  IMPORTING
+**    er_data                 =
+*    .
+**  CATCH /iwbep/cx_mgw_busi_exception.
+**  CATCH /iwbep/cx_mgw_tech_exception.
+**ENDTRY.
+    me->copy_data_to_ref(
+        EXPORTING
+          is_data = lr_response
+        CHANGING
+          cr_data = er_data ).
+
+  ENDMETHOD.
+
+
+  method /IWBEP/IF_MGW_APPL_SRV_RUNTIME~GET_EXPANDED_ENTITY.
+ DATA: lv_entity_name     TYPE /iwbep/mgw_tech_name,
+          ls_expanded_clause LIKE LINE OF et_expanded_tech_clauses,
+          lt_return          TYPE TABLE OF bapiret2.
+
+    CASE iv_entity_name.
+      WHEN 'ASBin'.
+
+* add the information that the expand for SALESORDERS/ITEMS has been done
+      ls_expanded_clause = 'ASBIN_ASBINCONTENT'.
+      APPEND ls_expanded_clause TO et_expanded_tech_clauses.
+      ls_expanded_clause = 'ASBIN_BUILDGRID'.
+      APPEND ls_expanded_clause TO et_expanded_tech_clauses.
+      ls_expanded_clause = 'ASBIN_ASBINCOMPCONTENT'.
+      APPEND ls_expanded_clause TO et_expanded_tech_clauses.
+      er_entity = readHU( EXPORTING it_key_tab = it_key_tab ).
+
+      WHEN OTHERS.
+    ENDCASE.
+**TRY.
+*CALL METHOD SUPER->/IWBEP/IF_MGW_APPL_SRV_RUNTIME~GET_EXPANDED_ENTITY
+**  EXPORTING
+**    iv_entity_name           =
+**    iv_entity_set_name       =
+**    iv_source_name           =
+**    it_key_tab               =
+**    it_navigation_path       =
+**    io_expand                =
+**    io_tech_request_context  =
+**  IMPORTING
+**    er_entity                =
+**    es_response_context      =
+**    et_expanded_clauses      =
+**    et_expanded_tech_clauses =
+*    .
+**  CATCH /iwbep/cx_mgw_busi_exception.
+**  CATCH /iwbep/cx_mgw_tech_exception.
+**ENDTRY.
+  endmethod.
+
+
+  method ASBINSET_CREATE_ENTITY.
+ DATA: lv_entity_name     TYPE /iwbep/mgw_tech_name,
+*          ls_expanded_clause LIKE LINE OF et_expanded_tech_clauses,
+          lt_return          TYPE TABLE OF bapiret2.
+
+    CASE iv_entity_name.
+      WHEN 'ASBin'.
+
+* add the information that the expand for SALESORDERS/ITEMS has been done
+      er_entity = insert_bin( EXPORTING io_data_provider = io_data_provider ).
+
+      WHEN OTHERS.
+    ENDCASE.
+
+**TRY.
+*CALL METHOD SUPER->ASBINSET_CREATE_ENTITY
+*  EXPORTING
+*    IV_ENTITY_NAME          =
+*    IV_ENTITY_SET_NAME      =
+*    IV_SOURCE_NAME          =
+*    IT_KEY_TAB              =
+**    io_tech_request_context =
+*    IT_NAVIGATION_PATH      =
+**    io_data_provider        =
+**  IMPORTING
+**    er_entity               =
+*    .
+**  CATCH /iwbep/cx_mgw_busi_exception.
+**  CATCH /iwbep/cx_mgw_tech_exception.
+**ENDTRY.
+  endmethod.
+
+
+  METHOD call_as_if.
+************************************************************************
+* Company     : Swisslog AG
+*
+* Description : Call AutoStore interface method.
+*
+*
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Version ¦ Date       ¦ Author           ¦ Description
+* ------- ¦ ---------- ¦ ---------------- ¦ ----------------------------
+* 1.0     ¦ 2020-09-16 ¦ F. Pleinies      ¦ Initial version
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    "  Local Declarations..
+    " ------------------------------------------ "
+    DATA: lo_as_if     TYPE REF TO zswl_cl_services_autostore,
+          ls_request   TYPE zswl_s_as_if_request,
+          ls_response  TYPE zswl_s_as_if_response,
+          lv_cont_code TYPE zswl_de_as_content,
+          lv_huident   TYPE /scwm/de_huident,
+          lr_hu        TYPE REF TO zswl_cl_hu,
+          lr_ws        TYPE REF TO zswl_cl_workstation.
+*          lv_errortext  TYPE string,
+*          lv_successful TYPE boolean.
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+
+    IF gv_simulation_mode = abap_true.
+      rs_data-successful = abap_true.
+      rs_data-port_id = '01'.
+      rs_data-is_ready = '1'.
+      rs_data-selected_bin = '34003'.
+      rs_data-bin_id = '34001'.
+      RETURN.
+    ENDIF.
+
+    CREATE OBJECT lr_ws
+      EXPORTING
+        iv_lgnum       = gv_lgnum
+        iv_workstation = gv_workstation.
+
+    lo_as_if = zswl_cl_services_autostore=>get_instance( EXPORTING iv_lgnum = gv_lgnum ).
+
+    CASE iv_method.
+      WHEN zswl_cl_services_autostore=>gc_method_openport.
+        "Open the Port for receiving AS bins
+        ls_request-port_id = lr_ws->get_data( )-act_asportid.
+        fill_request_data( EXPORTING ir_ws = lr_ws CHANGING cs_request = ls_request ).
+        TRY.
+            lo_as_if->openport(
+              EXPORTING is_request = ls_request
+              IMPORTING ev_successful = rs_data-successful ).
+
+            IF rs_data-successful = abap_false.
+            ENDIF.
+          CATCH zcx_swl_as_if_exception.
+        ENDTRY.
+      WHEN zswl_cl_services_autostore=>gc_method_closeport.
+        "Close the Port
+        ls_request-port_id = lr_ws->get_data( )-act_asportid.
+        TRY.
+            lo_as_if->closeport(
+              EXPORTING is_request = ls_request
+              IMPORTING ev_successful = rs_data-successful ).
+
+            IF rs_data-successful = abap_true.
+              lr_ws->deactivate( ).
+            ENDIF.
+          CATCH zcx_swl_as_if_exception.
+        ENDTRY.
+      WHEN zswl_cl_services_autostore=>gc_method_openbin.
+        "Open bin for receiving AS bins
+        ls_request-port_id = lr_ws->get_data( )-act_asportid.
+        TRY.
+            lo_as_if->openbin(
+              EXPORTING is_request = ls_request
+              IMPORTING ev_successful = rs_data-successful
+                        es_response   = ls_response
+                        ev_errortext  = DATA(lv_errortext) ).
+
+            IF rs_data-successful = abap_true.
+              IF zswl_cl_as_param=>read_const(
+                   iv_lgnum      = gv_lgnum
+                   iv_context = zswl_cl_as_param=>gc_context_as
+                   iv_parameter    = zswl_cl_as_param=>gc_profile_as
+                   iv_name  = zswl_cl_as_param=>gc_para_if_emu  ) = abap_true.
+                rs_data-selected_bin = ls_response-bin_id.
+              ELSE.
+                CLEAR rs_data-selected_bin.
+              ENDIF.
+            ELSE.
+              "Handle CODE 1015/1016 -> Nothing found that fulfill the Port select requirements.
+              handle_response_error( EXPORTING
+                ir_ws = lr_ws
+                is_response = ls_response
+                is_request = ls_request
+                iv_text = lv_errortext ).
+            ENDIF.
+          CATCH zcx_swl_as_if_exception.
+        ENDTRY.
+      WHEN zswl_cl_services_autostore=>gc_method_closebin.
+        CREATE OBJECT lr_hu
+          EXPORTING
+            i_lgnum   = gv_lgnum
+            i_huident = CONV #( lr_ws->get_data( )-act_asbin ).
+
+
+        "Close bin for receiving AS bins
+        ls_request-port_id = lr_ws->get_data( )-act_asportid.
+        ls_request-task_id = lr_ws->get_data( )-act_astaskid.
+        ls_request-bin_id = lr_ws->get_data( )-act_asbin.
+        ls_request-content = zswl_cl_as_hu=>recalc_contentcode( ir_hu = lr_hu iv_lgnum = gv_lgnum ).
+
+        TRY.
+
+            lo_as_if->closebin(
+              EXPORTING is_request = ls_request
+              IMPORTING ev_successful = rs_data-successful
+                        es_response   = ls_response ).
+
+            IF rs_data-successful = abap_true.
+              "Clear WS table
+              DATA(ls_ws_data) = lr_ws->get_data( ).
+              CLEAR ls_ws_data-act_asbin.
+              CLEAR ls_ws_data-act_astaskid.
+              lr_ws->update( EXPORTING is_data = ls_ws_data ).
+            ENDIF.
+          CATCH zcx_swl_as_if_exception.
+        ENDTRY.
+      WHEN zswl_cl_services_autostore=>gc_method_getportstatus.
+        "Check if bin is on port
+        ls_request-port_id = lr_ws->get_data( )-act_asportid.
+
+        TRY.
+
+            lo_as_if->getportstatus(
+              EXPORTING is_request = ls_request
+              IMPORTING ev_successful = rs_data-successful
+                        es_response   = ls_response ).
+
+            IF rs_data-successful = abap_true.
+              IF ls_response-is_ready = '1'.
+                "Set HU object to WS table
+                lv_huident = ls_response-selected_bin.
+
+                CASE lr_ws->get_ws_mode( ).
+                  WHEN zswl_cl_workstation=>ws_mode-ptwy.
+                    zswl_cl_hu=>is_hu_existing( EXPORTING i_lgnum = gv_lgnum i_huident = lv_huident IMPORTING e_existing = DATA(lv_exist) ).
+                    IF lv_exist = abap_True.
+
+
+                      CREATE OBJECT lr_hu
+                        EXPORTING
+                          i_lgnum        = CONV #( gv_lgnum )
+                          i_huident      = CONV #( lv_huident )
+                          i_read_hu_tree = abap_true.
+
+                      IF lr_hu IS BOUND.
+                        DATA(lv_procty) = zswl_cl_as_param=>read_const(
+                             iv_lgnum      = gv_lgnum
+                             iv_context    = zswl_cl_as_param=>gc_context_asdia
+                             iv_parameter = zswl_cl_as_param=>gc_profile_ptw
+                             iv_name   = zswl_cl_as_param=>gc_para_wpthumove ).
+                        lr_hu->move(
+                          EXPORTING
+                             i_nlpla  = lr_ws->get_data( )-bin
+                             i_procty = CONV #( lv_procty )
+                             i_squit  = abap_true
+                                       ).
+                      ENDIF.
+                    ENDIF.
+                ENDCASE.
+
+                "Update WS
+                ls_ws_data = lr_ws->get_data( ).
+                ls_ws_data-act_asbin = lv_huident.
+                ls_ws_data-act_astaskid = ls_response-selected_task.
+                lr_ws->update( EXPORTING is_data = ls_ws_data ).
+              ENDIF.
+            ENDIF.
+          CATCH zcx_swl_as_if_exception.
+        ENDTRY.
+    ENDCASE.
+
+    MOVE-CORRESPONDING ls_response TO rs_data.
+  ENDMETHOD.
+
+
+  METHOD determine_next_pool_rp.
+    DATA:
+          lt_itemwt_link TYPE /scwm/tt_itemwt.
+
+    DATA(lr_pool) = NEW y20_cl_pool( iv_lgnum = gv_lgnum ).
+
+    "Third. Check if act poolname is maintained at workstation
+    IF ir_ws->get_data( )-act_poolname IS NOT INITIAL AND ir_ws->get_data( )-lastdocno IS NOT INITIAL.
+      DATA(lv_docno) = ir_ws->get_data( )-lastdocno.
+      DATA(lv_poolname) = ir_ws->get_data( )-act_poolname.
+      SELECT * FROM /scdl/db_proch_o INTO TABLE @DATA(lt_obd_header)
+        WHERE zzpoolname = @lv_poolname
+          AND docno      = @lv_docno.
+
+      IF sy-subrc = 0.
+        "Get all WTs of the item
+        CALL FUNCTION '/SCWM/QUERY_LINK_WHRWT'
+          EXPORTING
+            iv_docid       = lt_obd_header[ 1 ]-docid
+          IMPORTING
+            et_itemwt_link = lt_itemwt_link
+          EXCEPTIONS
+            wrong_input    = 1
+            OTHERS         = 2.
+        IF lines( lt_itemwt_link ) > 0.
+          "Okay we found one, get out and go on with the cat from the pool
+          lr_pool->get_pool( EXPORTING iv_zzpoolname = ir_ws->get_data( )-act_poolname IMPORTING es_poolname = DATA(ls_pool) ).
+          IF ls_pool IS NOT INITIAL.
+            APPEND ls_pool-ascat TO cs_request-categories.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+    ELSE.
+
+      "First select open WTs for AS
+      SELECT * FROM /scwm/ordim_o INTO TABLE @DATA(lt_ordim_o)
+        WHERE lgnum = @gv_lgnum
+*          AND trart = @lv_trart
+*          AND vltyp = @lv_asstype
+        .
+
+
+      "Second Determine and check the poolname
+      LOOP AT lt_ordim_o INTO DATA(ls_ordim_o).
+
+        /scwm/cl_dlv_management_prd=>get_instance( )->query(
+        EXPORTING
+          it_docid = VALUE #( ( docid  = ls_ordim_o-rdocid ) )
+          iv_doccat       = ls_ordim_o-rdoccat
+          is_read_options = VALUE #( data_retrival_only      = abap_true
+                                     mix_in_object_instances = /scwm/if_dl_c=>sc_mix_in_load_instance )
+          is_include_data = VALUE #( item_hierarchy          = abap_false
+                                     item_refdoc             = abap_true
+                                     item_status             = abap_true
+*                                       item_addmeas        = abap_true
+                                      )
+        IMPORTING
+          et_headers      = DATA(lt_headers)
+          et_items        = DATA(lt_items) ).
+
+
+        "Check if pool is not linked to another WS
+        DATA(lv_pool) = lt_headers[ 1 ]-eew-zzpoolname.
+        SELECT COUNT(*) FROM zswl_t_works INTO @DATA(lv_count)
+          WHERE lgnum = @gv_lgnum
+            AND act_poolname = @lv_pool.
+
+        IF lv_count IS NOT INITIAL.
+          CONTINUE. "Pool is already assigned, go to next WT
+        ENDIF.
+
+        "Set the next found RP
+        lr_pool->get_pool( EXPORTING iv_zzpoolname = ir_ws->get_data( )-act_poolname IMPORTING es_poolname = ls_pool ).
+        IF ls_pool IS NOT INITIAL AND ls_pool-picktype = 'RP'.
+          APPEND ls_pool-ascat TO cs_request-categories.
+          DATA(ls_data) = ir_ws->get_data( ).
+          ls_data-act_poolname = ls_pool-poolname.
+          ir_ws->update( EXPORTING is_data = ls_data ).
+        ENDIF.
+
+
+      ENDLOOP.
+    ENDIF.
+
+
+  ENDMETHOD.
+
+
+  METHOD fill_request_data.
+    CASE ir_ws->get_ws_mode( ).
+      WHEN zswl_cl_workstation=>ws_mode-ptwy.
+        DATA(lv_default_cc) = zswl_cl_as_param=>read_const(
+                   iv_lgnum      = gv_lgnum
+                   iv_context = zswl_cl_as_param=>gc_context_asdia
+                   iv_parameter    = zswl_cl_as_param=>gc_profile_ptw
+                   iv_name  = zswl_cl_as_param=>gc_para_default_cc  ).
+        APPEND lv_default_cc TO cs_request-content_codes.
+*        APPEND '1000' TO cs_request-content_codes.
+      WHEN zswl_cl_workstation=>ws_mode-pick.
+        IF ir_ws->get_data( )-out_mode = 'PICK_REPL'.
+          "First check if Poolname is set on WORKS table
+          IF ir_ws->get_data( )-fix_poolname IS NOT INITIAL.
+            DATA(lr_pool) = NEW y20_cl_pool( iv_lgnum = gv_lgnum ).
+            lr_pool->get_pool( EXPORTING iv_zzpoolname = ir_ws->get_data( )-fix_poolname IMPORTING es_poolname = DATA(ls_pool) ).
+            IF ls_pool IS NOT INITIAL.
+              APPEND ls_pool-ascat TO cs_request-categories.
+            ENDIF.
+          ELSE.
+            "Read the next relevant WT and set the poolname to the Workstation table. Hold also the category from pooltable
+            determine_next_pool_rp( EXPORTING ir_ws = ir_ws CHANGING cs_request = cs_request ).
+          ENDIF.
+        ELSE.
+          "Set all activated pooltypes as category during OpenPickPort
+          IF ir_ws->get_data( )-pooltype_cp = abap_true.
+            DATA(lv_cat) = zswl_cl_as_param=>read_const(
+               iv_lgnum      = gv_lgnum
+               iv_context = zswl_cl_as_param=>gc_context_asdia
+               iv_parameter    = zswl_cl_as_param=>gc_profile_pick
+               iv_name  = zswl_cl_as_param=>gc_para_category_pt_cp  ).
+            APPEND lv_cat TO cs_request-categories.
+          ENDIF.
+
+          IF ir_ws->get_data( )-pooltype_dp = abap_true.
+            lv_cat = zswl_cl_as_param=>read_const(
+               iv_lgnum      = gv_lgnum
+               iv_context = zswl_cl_as_param=>gc_context_asdia
+               iv_parameter    = zswl_cl_as_param=>gc_profile_pick
+               iv_name  = zswl_cl_as_param=>gc_para_category_pt_dp  ).
+            APPEND lv_cat TO cs_request-categories.
+          ENDIF.
+          IF ir_ws->get_data( )-pooltype_ds = abap_true.
+            lv_cat = zswl_cl_as_param=>read_const(
+               iv_lgnum      = gv_lgnum
+               iv_context = zswl_cl_as_param=>gc_context_asdia
+               iv_parameter    = zswl_cl_as_param=>gc_profile_pick
+               iv_name  = zswl_cl_as_param=>gc_para_category_pt_ds  ).
+            APPEND lv_cat TO cs_request-categories.
+          ENDIF.
+          IF ir_ws->get_data( )-pooltype_np = abap_true.
+            lv_cat = zswl_cl_as_param=>read_const(
+               iv_lgnum      = gv_lgnum
+               iv_context = zswl_cl_as_param=>gc_context_asdia
+               iv_parameter    = zswl_cl_as_param=>gc_profile_pick
+               iv_name  = zswl_cl_as_param=>gc_para_category_pt_np  ).
+            APPEND lv_cat TO cs_request-categories.
+          ENDIF.
+        ENDIF.
+      WHEN zswl_cl_workstation=>ws_mode-cons.
+        lv_cat = zswl_cl_as_param=>read_const(
+           iv_lgnum      = gv_lgnum
+           iv_context = zswl_cl_as_param=>gc_context_asdia
+           iv_parameter    = zswl_cl_as_param=>gc_profile_pick
+           iv_name  = zswl_cl_as_param=>gc_para_category_intl_view ).
+        APPEND lv_cat TO cs_request-categories.
+      WHEN zswl_cl_workstation=>ws_mode-view.
+        lv_cat = zswl_cl_as_param=>read_const(
+           iv_lgnum      = gv_lgnum
+           iv_context = zswl_cl_as_param=>gc_context_asdia
+           iv_parameter    = zswl_cl_as_param=>gc_profile_pick
+           iv_name  = zswl_cl_as_param=>gc_para_category_intl_view ).
+        APPEND lv_cat TO cs_request-categories.
+      WHEN zswl_cl_workstation=>ws_mode-inv.
+        lv_cat = zswl_cl_as_param=>read_const(
+           iv_lgnum      = gv_lgnum
+           iv_context = zswl_cl_as_param=>gc_context_asdia
+           iv_parameter    = zswl_cl_as_param=>gc_profile_pick
+           iv_name  = zswl_cl_as_param=>gc_para_category_intl_phyinv ).
+        APPEND lv_cat TO cs_request-categories.
+      WHEN zswl_cl_workstation=>ws_mode-intp.
+        lv_cat = zswl_cl_as_param=>read_const(
+           iv_lgnum      = gv_lgnum
+           iv_context = zswl_cl_as_param=>gc_context_asdia
+           iv_parameter    = zswl_cl_as_param=>gc_profile_pick
+           iv_name  = zswl_cl_as_param=>gc_para_category_intl_pick ).
+        APPEND lv_cat TO cs_request-categories.
+        lv_cat = zswl_cl_as_param=>read_const(
+           iv_lgnum      = gv_lgnum
+           iv_context = zswl_cl_as_param=>gc_context_asdia
+           iv_parameter    = zswl_cl_as_param=>gc_profile_pick
+           iv_name  = zswl_cl_as_param=>gc_para_category_intl_vpick ).
+        APPEND lv_cat TO cs_request-categories.
+      WHEN OTHERS.
+    ENDCASE.
+  ENDMETHOD.
+
+
+  METHOD handle_changelayout.
+    DATA:
+      ro_ws     TYPE REF TO zswl_cl_workstation,
+      lv_status TYPE zswl_de_ws_status.
+
+    IF it_parameter IS NOT INITIAL.
+
+* Read Function import parameter value
+      READ TABLE it_parameter INTO DATA(ls_parameter) WITH KEY name = 'Lgnum'.
+      IF sy-subrc = 0.
+        gv_lgnum = ls_parameter-value.
+      ENDIF.
+
+      READ TABLE it_parameter INTO ls_parameter WITH KEY name = 'Workstation'.
+      IF sy-subrc = 0.
+        gv_workstation = ls_parameter-value.
+      ENDIF.
+
+      READ TABLE it_parameter INTO ls_parameter WITH KEY name = 'BinId'.
+      IF sy-subrc = 0.
+        DATA(lv_binId) = ls_parameter-value.
+      ENDIF.
+
+      READ TABLE it_parameter INTO ls_parameter WITH KEY name = 'HuType'.
+      IF sy-subrc = 0.
+        DATA(lv_hutype) = ls_parameter-value.
+      ENDIF.
+
+      "Change layout
+      TRY.
+          zswl_cl_as_hu=>change_grid(
+            EXPORTING
+              iv_hutype = CONV #( lv_hutype )
+              iv_huident = CONV #( lv_binId )
+              iv_lgnum = gv_lgnum
+           ).
+        CATCH zcx_ewm_general_exception INTO DATA(lr_exc).
+      ENDTRY.
+
+
+      rs_data-bin_id = CONV #( lv_binId ).
+
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD handle_response_error.
+
+    "Handle CODE 1015/1016 -> Nothing found that fulfill the Port select requirements.
+    IF is_response-code = '1015' OR is_response-code = '1016'.
+
+      "Clear act. Poolname in WORKS
+      DATA(ls_data) = ir_ws->get_data( ).
+      CLEAR ls_data-act_poolname.
+      ir_ws->update( ls_data ).
+
+      "Raise message to dialog
+      DATA(lv_request_data) = '['.
+      LOOP AT is_request-categories into DATA(ls_cat).
+        lv_request_data = lv_request_data && ls_cat.
+      ENDLOOP.
+      lv_request_data = lv_request_data && ']'.
+
+      MESSAGE e000(zswl_as) WITH iv_text lv_request_data into DATA(lv_text).
+      raise_busi_exception( ).
+    ENDIF.
+
+
+  ENDMETHOD.
+
+
+  METHOD handle_ws_runoutmode.
+    DATA:
+          ro_ws type REF TO zswl_cl_workstation,
+          lv_status type zswl_de_ws_status.
+
+    IF it_parameter IS NOT INITIAL.
+
+* Read Function import parameter value
+      READ TABLE it_parameter INTO DATA(ls_parameter) WITH KEY name = 'Lgnum'.
+      IF sy-subrc = 0.
+        gv_lgnum = ls_parameter-value.
+      ENDIF.
+
+      READ TABLE it_parameter INTO ls_parameter WITH KEY name = 'Workstation'.
+      IF sy-subrc = 0.
+        gv_workstation = ls_parameter-value.
+      ENDIF.
+
+      READ TABLE it_parameter INTO ls_parameter WITH KEY name = 'RunoutMode'.
+      IF sy-subrc = 0.
+        DATA(lv_runout) = ls_parameter-value.
+      ENDIF.
+
+      create OBJECT ro_ws
+        EXPORTING
+          iv_lgnum = gv_lgnum
+          iv_workstation = gv_workstation.
+
+      IF ro_ws IS BOUND.
+        IF lv_runout = abap_true.
+            ro_ws->set_ws_status( zswl_cl_workstation=>ws_status-runout ).
+        ELSE.
+            ro_ws->set_ws_status( zswl_cl_workstation=>ws_status-on ).
+        ENDIF.
+
+      ENDIF.
+
+
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD insert_bin.
+    DATA:
+      ls_entity       TYPE zswl_cl_ewm_autostore_mpc=>ts_asbin,
+*      BEGIN OF ls_entity.
+*        INCLUDE TYPE zswl_cl_ewm_autostore_mpc=>ts_asbin.
+*    DATA: asbin_asbincontent TYPE zswl_cl_ewm_autostore_mpc=>tt_asbincontent,
+*        asbin_buildgrid    TYPE zswl_cl_ewm_autostore_mpc=>tt_asbincontent,
+
+*      END OF ls_entity,
+
+
+
+      lt_asbincontent TYPE zswl_cl_ewm_autostore_mpc=>tt_asbincontent,
+      lt_buildgrid    TYPE zswl_cl_ewm_autostore_mpc=>tt_asbincontent,
+      ls_asbincontent LIKE LINE OF lt_asbincontent,
+      ro_hu           TYPE REF TO zswl_cl_hu,
+      ro_ws           TYPE REF TO zswl_cl_workstation,
+      lt_matid        TYPE /scwm/tt_matid,
+      lt_guid_hu      TYPE /scwm/tt_guid_hu,
+      ls_guid_hu      LIKE LINE OF lt_guid_hu,
+      lv_matnr        TYPE /sapapo/matnr,
+      lt_stock        TYPE /scwm/tt_stock_select,
+      lv_huident      TYPE /scwm/de_huident,
+      ro_as_if        TYPE REF TO zswl_cl_services_autostore,
+      ls_response     TYPE zswl_s_as_if_response,
+      ls_request      TYPE zswl_s_as_if_request
+      .
+
+    io_data_provider->read_entry_data( IMPORTING es_data = ls_entity ).
+
+
+    ls_entity-columns = '1'.
+    ls_entity-rows = '1'.
+    rr_entity = ls_entity.
+    RETURN.
+
+    IF ls_entity-lgnum IS NOT INITIAL AND ls_entity-binid IS NOT INITIAL.
+
+      zswl_cl_hu=>is_hu_existing(
+        EXPORTING
+          i_lgnum = ls_entity-lgnum
+          i_huident = ls_entity-binid
+       IMPORTING
+         e_existing = DATA(lv_exist) ).
+
+      IF lv_exist = abap_true.
+        "Throw exception
+      ELSE.
+
+        CREATE OBJECT ro_ws
+          EXPORTING
+            iv_lgnum       = ls_entity-lgnum
+            iv_workstation = CONV #( ls_entity-workstation ).
+
+
+        zswl_cl_hu=>delete_leading_zeros_huident( CHANGING c_hu = ls_entity-binid ).
+        ro_hu = zswl_cl_as_hu=>create_as_hu(
+          EXPORTING
+            iv_lgnum = ls_entity-lgnum
+            iv_huident = ls_entity-binid
+            iv_lgpla = ro_ws->get_data( )-bin
+            iv_create = abap_true
+             ).
+
+        "Move HU to AS Grid storage bin in EWM
+        IF ro_hu IS BOUND.
+          DATA(lv_wpt) = zswl_cl_as_param=>read_const(
+           iv_lgnum      = gv_lgnum
+           iv_context = zswl_cl_as_param=>gc_context_asdia
+           iv_parameter    = zswl_cl_as_param=>gc_profile_ptw
+           iv_name  = zswl_cl_as_param=>gc_para_wptbacktogrid  ).
+
+          ro_hu->move( i_procty = CONV #( lv_wpt ) ).
+        ENDIF.
+
+      DATA(hu_layout) = zswl_cl_as_hu=>get_hu_layout( EXPORTING iv_hutype = ro_hu->get_hutyp( ) ).
+        ls_entity-columns = hu_layout-y_cols.
+        ls_entity-rows = hu_layout-x_rows.
+
+        ls_entity-binid = ls_entity-binid.
+      ENDIF.
+    ENDIF.
+
+    "Insert the AS Bin in AS Grid
+    IF gv_simulation_mode = abap_false.
+
+      CREATE OBJECT ro_as_if.
+
+
+      CLEAR : ls_response.
+
+      ls_request-method_name = zswl_cl_services_autostore=>gc_method_insertbin.
+      ls_request-bin_id = ls_entity-binid.
+      ls_request-port_id = ro_ws->get_data( )-act_asportid.
+      ls_request-content = ro_hu->get_huhdr_hu( )-zzswl_as_cont_code.
+      ls_request-bin_type = '2'.
+      TRY.
+          " INSERT BIN
+          ro_as_if->insertbin(
+            EXPORTING
+              is_request    = ls_request
+              iv_write_log  = abap_true
+            IMPORTING
+              es_response   = ls_response
+              ev_successful = DATA(lv_successful)
+              ev_errortext  = DATA(lv_errortext)
+               ).
+        CATCH zcx_swl_as_if_exception INTO DATA(lo_as_srv_excp).
+          IF lo_as_srv_excp IS NOT INITIAL.
+            " Error occurred..
+            DATA(lv_mesgtxt) = lo_as_srv_excp->if_message~get_text( ).
+            MESSAGE e000(zswl) INTO zswl_cl_log=>m_dummy_msg WITH lv_mesgtxt.
+          ENDIF.
+      ENDTRY.
+
+
+    ENDIF.
+
+
+    rr_entity = ls_entity.
+*    me->copy_data_to_ref(
+*           EXPORTING
+*             is_data = ls_entity
+*           CHANGING
+*             cr_data = rr_entity ).
+  ENDMETHOD.
+
+
+  METHOD RAISE_BUSI_EXCEPTION.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_QGTE
+* Description : Raise exception
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-06-25¦F. Pleinies     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+*    IF mo_log IS BOUND.
+*      mo_log->add_message( ).
+*    ENDIF.
+    RAISE EXCEPTION NEW /iwbep/cx_mgw_busi_exception(
+        textid = VALUE #( msgno = sy-msgno
+                          msgid = sy-msgid
+                          attr1 = sy-msgv1
+                          attr2 = sy-msgv2
+                          attr3 = sy-msgv3
+                          attr4 = sy-msgv4 ) ).
+  ENDMETHOD.
+
+
+  METHOD readhu.
+
+    DATA:
+      BEGIN OF ls_entity.
+        INCLUDE TYPE zswl_cl_ewm_autostore_mpc=>ts_asbin.
+    DATA: asbin_asbincontent     TYPE zswl_cl_ewm_autostore_mpc=>tt_asbincontent,
+        asbin_buildgrid        TYPE zswl_cl_ewm_autostore_mpc=>tt_asbincontent,
+        asbin_asbincompcontent TYPE zswl_cl_ewm_autostore_mpc=>tt_asbincompcontent,
+
+      END OF ls_entity,
+
+
+
+
+      lt_asbincontent     TYPE zswl_cl_ewm_autostore_mpc=>tt_asbincontent,
+      lt_buildgrid        TYPE zswl_cl_ewm_autostore_mpc=>tt_asbincontent,
+      ls_asbincontent     LIKE LINE OF lt_asbincontent,
+      lt_asbincompcontent TYPE zswl_cl_ewm_autostore_mpc=>tt_asbincompcontent,
+      ls_asbincompcontent LIKE LINE OF lt_asbincompcontent,
+      ro_hu               TYPE REF TO zswl_cl_hu,
+      lt_matid            TYPE /scwm/tt_matid,
+      lt_guid_hu          TYPE /scwm/tt_guid_hu,
+      ls_guid_hu          LIKE LINE OF lt_guid_hu,
+      lv_matnr            TYPE /scwm/de_matnr,
+      lt_stock            TYPE /scwm/tt_stock_select
+      .
+
+    LOOP AT it_key_tab ASSIGNING FIELD-SYMBOL(<ls_key>).
+      CASE <ls_key>-name.
+        WHEN 'Lgnum'.
+          DATA(lv_lgnum) = <ls_key>-value.
+        WHEN 'BinID'.
+          DATA(lv_huident) = <ls_key>-value.
+      ENDCASE.
+    ENDLOOP.
+
+    IF lv_lgnum IS NOT INITIAL AND lv_huident IS NOT INITIAL.
+      CREATE OBJECT ro_hu
+        EXPORTING
+          i_lgnum        = CONV #( lv_lgnum )
+          i_huident      = CONV #( lv_huident )
+          i_read_hu_tree = abap_true.
+
+      DATA(hu_layout) = zswl_cl_as_hu=>get_hu_layout( EXPORTING iv_hutype = ro_hu->get_hutyp( ) ).
+      ls_entity-columns = hu_layout-y_cols.
+      ls_entity-rows = hu_layout-x_rows.
+      ls_entity-defaultlayout = hu_layout-creation.
+*      ro_hu->get_item_all( IMPORTING et_huitm = DATA(lt_hu_items) ).
+      "Get all Sub HU's
+      DATA(lt_sub_hus) = ro_hu->get_hutree( ).
+
+      LOOP AT lt_sub_hus INTO DATA(ls_sub_hu).
+        CLEAR ls_guid_hu.
+        ls_guid_hu-guid_hu = ls_sub_hu-guid.
+        APPEND ls_guid_hu TO lt_guid_hu.
+      ENDLOOP.
+      "First delete all sub HU's
+      zswl_cl_hu=>read_hus_by_guid(
+        EXPORTING
+          i_lgnum = CONV #( lv_lgnum )
+          it_guid = lt_guid_hu
+          iv_only_sub_hus = abap_true
+       IMPORTING
+          et_hu = DATA(lt_hu_refs)
+*       CHANGING
+*         co_log  = go_log
+        ).
+
+      LOOP AT lt_hu_refs INTO DATA(ls_hu_ref).
+        CLEAR: lt_matid, ls_asbincontent, lt_stock.
+
+        ls_asbincontent-binid = ls_hu_ref-huident.
+        ls_asbincontent-compartment = ls_hu_ref-o_hu->get_huhdr_hu( )-zzswl_as_x_comp && '-' && ls_hu_ref-o_hu->get_huhdr_hu( )-zzswl_as_y_comp..
+
+
+        ls_hu_ref-o_hu->get_stock( IMPORTING et_stock = lt_stock ).
+        IF lines( lt_stock ) > 0.
+          CLEAR lt_matid.
+          APPEND lt_stock[ 1 ]-matid TO lt_matid.
+          zswl_cl_product=>read_product(
+            EXPORTING
+              i_lgnum = CONV #( lv_lgnum )
+              it_matid_r16 = lt_matid
+              i_read_global = abap_true
+            IMPORTING
+              et_prod_ref = DATA(lt_prod_ref) ).
+          READ TABLE lt_prod_ref INTO DATA(ls_prod_ref) INDEX 1.
+          IF sy-subrc = 0.
+
+            CALL FUNCTION 'CONVERSION_EXIT_PRODU_OUTPUT'
+              EXPORTING
+                input        = ls_prod_ref-o_product->get_matnr( )
+              IMPORTING
+                output       = lv_matnr
+              EXCEPTIONS
+                length_error = 1
+                OTHERS       = 2.
+            IF sy-subrc <> 0.
+*              RETURN.
+            ENDIF.
+
+            ls_asbincontent-product-matid = ls_prod_ref-matid_r16.
+            ls_asbincontent-product-matnr = lv_matnr.
+            ls_asbincontent-product-maktx = ls_prod_ref-o_product->get_maktx( ).
+            ls_asbincontent-quant-quan = lt_stock[ 1 ]-quan.
+            ls_asbincontent-quant-unit = lt_stock[ 1 ]-meins.
+
+            APPEND ls_asbincontent TO lt_asbincontent.
+
+            MOVE-CORRESPONDING ls_asbincontent TO ls_asbincompcontent.
+            CLEAR ls_asbincontent.
+*            ls_asbincompcontent
+            "Add additional quant informations.
+            ls_asbincompcontent-stocktype     = lt_stock[ 1 ]-cat.
+            IF lt_stock[ 1 ]-vfdat IS NOT INITIAL OR lt_stock[ 1 ]-vfdat <> '00000000'.
+              ls_asbincompcontent-expirydate    = lt_stock[ 1 ]-vfdat.
+              ls_asbincompcontent-expirydate = ls_asbincompcontent-expirydate+0(4) && '-' && ls_asbincompcontent-expirydate+4(2) && '-' && ls_asbincompcontent-expirydate+6(2).
+            ENDIF.
+            ls_asbincompcontent-expiryextcnt  = lt_stock[ 1 ]-zzexpdateindex.
+            ls_asbincompcontent-guidparent  = lt_stock[ 1 ]-guid_parent.
+            ls_asbincompcontent-guidstock  = lt_stock[ 1 ]-guid_stock.
+
+            NEW /scwm/cl_mon_stock( CONV #( lv_lgnum ) )->get_available_stock(
+               EXPORTING
+                 iv_skip_resource = abap_true
+                 iv_skip_tu       = abap_true
+*                     it_matnr_r       = VALUE #( ( low    = CONV #( lv_matnr )
+*                                                   sign   = wmegc_sign_inclusive
+*                                                   option = wmegc_option_eq ) )
+*                     it_cat_r         = VALUE #( ( low    = lt_stock[ 1 ]-cat
+*                                                   sign   = wmegc_sign_inclusive
+*                                                   option = wmegc_option_eq ) )
+                 it_lgpla_r       = VALUE #( ( low    = lt_stock[ 1 ]-lgpla
+                                               sign   = wmegc_sign_inclusive
+                                               option = wmegc_option_eq ) )
+               IMPORTING
+                 et_stock_mon     = DATA(lt_stock_mon) ).
+
+
+            IF lines( lt_stock_mon ) > 0.
+              READ TABLE lt_stock_mon INTO DATA(ls_stock_mon) WITH KEY guid_stock = lt_stock[ 1 ]-guid_stock.
+              IF ls_Stock_mon IS NOT INITIAL.
+                ls_asbincompcontent-availqty-unit = lt_stock[ 1 ]-meins.
+                ls_asbincompcontent-availqty-quan = ls_stock_mon-quan.
+                ls_asbincompcontent-availqty-unit = ls_stock_mon-meins.
+              ENDIF.
+            ENDIF.
+
+            APPEND ls_asbincompcontent TO lt_asbincompcontent.
+            CLEAR ls_asbincompcontent.
+*          ENDIF.
+          ENDIF.
+        ENDIF.
+
+      ENDLOOP.
+
+      ls_entity-asbin_asbincontent = lt_asbincontent.
+      ls_entity-asbin_asbincompcontent = lt_asbincompcontent.
+    ENDIF.
+
+    ls_entity-binid = lv_huident.
+
+    DATA(lt_huhdr_all) = ro_hu->get_huhdr_all( ).
+
+    LOOP AT lt_hu_refs INTO DATA(ls_hu_tree).
+      CLEAR ls_asbincontent.
+      READ TABLE lt_huhdr_all INTO DATA(ls_huhdr) WITH KEY guid_hu = ls_hu_tree-o_hu->get_guid( ).
+      IF ls_huhdr IS NOT INITIAL.
+        zswl_cl_hu=>delete_leading_zeros_huident( CHANGING c_hu = ls_huhdr-huident ).
+        ls_asbincontent-binid = ls_huhdr-huident.
+        ls_asbincontent-compartment = ls_huhdr-zzswl_as_x_comp && '-' && ls_huhdr-zzswl_as_y_comp.
+        IF ls_hu_tree-o_hu->has_stock( ).
+          ls_asbincontent-hasstock = abap_true.
+        ENDIF.
+*        IF ls_asbincontent-compartment = '2-1' OR ls_asbincontent-compartment = '1-1'.
+*          ls_asbincontent-hasstock = abap_true.
+*        ENDIF.
+        APPEND ls_asbincontent TO lt_buildgrid.
+      ENDIF.
+    ENDLOOP.
+    ls_entity-asbin_buildgrid = lt_buildgrid.
+
+    me->copy_data_to_ref(
+           EXPORTING
+             is_data = ls_entity
+           CHANGING
+             cr_data = rr_entity ).
+  ENDMETHOD.
+ENDCLASS.

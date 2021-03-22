@@ -1,0 +1,224 @@
+class ZSWL_CL_AS_SIM definition
+  public
+  inheriting from ZSWL_CL_SERVICES_AUTOSTORE
+  final
+  create public .
+
+public section.
+
+  data MV_LGNUM type /SCWM/LGNUM .
+
+  methods CONSTRUCTOR
+    importing
+      !I_DESTINATION type PFICF_DESTINATION_NAME default 'AUTOSTOREINTERFACE'
+      !I_LGNUM type /SCWM/LGNUM optional
+      !I_GRID_ID type ZSWL_DE_AS_GRID_ID default '1'
+    raising
+      ZCX_SWL_AS_IF_EXCEPTION .
+
+  methods CLOSEBIN
+    redefinition .
+  methods CLOSEPORT
+    redefinition .
+  methods GETPORTSTATUS
+    redefinition .
+  methods OPENBIN
+    redefinition .
+  methods OPENPORT
+    redefinition .
+protected section.
+private section.
+ENDCLASS.
+
+
+
+CLASS ZSWL_CL_AS_SIM IMPLEMENTATION.
+
+
+  method CLOSEBIN.
+    DATA: ls_simt  TYPE zswl_t_assimt,
+          ls_simpc TYPE zswl_t_assimc.
+
+    "Check if port is already open
+    SELECT single * FROM zswl_t_assimt  WHERE
+      portid = @is_request-port_id
+        AND task = @is_request-task_id
+        AND binid = @is_request-bin_id INTO @ls_simt.
+
+      IF sy-subrc = 0.
+        delete zswl_t_assimt from ls_simt.
+
+        commit WORK AND WAIT.
+        ev_successful = abap_true.
+      ENDIF.
+
+  endmethod.
+
+
+  method CLOSEPORT.
+    DATA: ls_simp  TYPE zswl_t_assimp,
+          ls_simpc TYPE zswl_t_assimc.
+
+    "Check if port is already open
+    SELECT single * FROM zswl_t_assimp  WHERE
+      portid = @is_request-port_id AND portmode IS NOT INITIAL INTO @ls_simp.
+
+      IF sy-subrc = 0.
+        delete zswl_t_assimp from ls_simp.
+        delete from zswl_t_assimc WHERE portid = ls_simp-portid.
+
+        commit WORK AND WAIT.
+        ev_successful = abap_true.
+      ENDIF.
+
+  endmethod.
+
+
+  method CONSTRUCTOR.
+    super->constructor( EXPORTING i_lgnum = i_lgnum ).
+    mv_lgnum = i_lgnum.
+  endmethod.
+
+
+  METHOD getportstatus.
+    DATA: ls_simp TYPE zswl_t_assimp,
+          ls_simt TYPE zswl_t_assimt.
+
+    "Check if port is already open
+    SELECT SINGLE * FROM zswl_t_assimp  WHERE
+      portid = @is_request-port_id AND portmode IS NOT INITIAL INTO @ls_simp.
+
+    IF sy-subrc = 0.
+      CASE ls_simp-portmode.
+        WHEN 'OPEN'. "Inbound process. Read an empty AS Bin
+          SELECT SINGLE * FROM zswl_t_assimt
+            WHERE portid = @ls_simp-portid AND contentcode IS NOT INITIAL INTO @ls_simt.
+
+          IF sy-subrc = 0.
+            es_response-selected_task = ls_simt-task.
+            es_response-selected_bin = ls_simt-binid.
+            es_response-is_ready = '1'.
+            ev_successful = abap_true.
+          ENDIF.
+        WHEN 'PICK'.
+        WHEN OTHERS.
+      ENDCASE.
+
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  method OPENBIN.
+
+   DATA: ls_simp  TYPE zswl_t_assimp,
+         lt_simc  type TABLE OF zswl_t_assimc,
+          ls_simt TYPE zswl_t_assimt.
+
+    "Check if port is already open
+    SELECT single * FROM zswl_t_assimp  WHERE
+      portid = @is_request-port_id AND portmode IS NOT INITIAL INTO @ls_simp.
+
+      IF sy-subrc = 0.
+        CASE ls_simp-portmode.
+          WHEN 'OPEN'. "Inbound process. Read an empty AS Bin
+
+            select * from zswl_t_assimc into TABLE lt_simc WHERE portid = ls_simp-portid.
+            DATA(lv_cc) = lt_simc[ 1 ]-contentcode.
+            select single huident from /scwm/huhdr into @DATA(lv_huident) where letyp = 'AS01' and zzswl_as_cont_code = @lv_cc.
+            IF lv_huident IS NOT INITIAL.
+              es_response-port_id = ls_simp-portid.
+              zswl_cl_hu=>delete_leading_zeros_huident( CHANGING c_hu = lv_huident ).
+              es_response-bin_id = lv_huident.
+              ev_successful = abap_true.
+              ls_simt-binid = lv_huident.
+              ls_simt-portid = ls_simp-portid.
+              ls_simt-contentcode = lv_cc.
+              modify zswl_t_assimt from ls_simt.
+              COMMIT WORK AND WAIT.
+            ELSE.
+              es_response-code = '1016'.
+              ev_successful = abap_false.
+            ENDIF.
+          WHEN 'PICK'.
+          WHEN OTHERS.
+        ENDCASE.
+
+      ENDIF.
+
+  endmethod.
+
+
+  METHOD openport.
+    DATA: ls_simp  TYPE zswl_t_assimp,
+          ls_simpc TYPE zswl_t_assimc.
+
+    "Check if port is already open
+    SELECT single * FROM zswl_t_assimp  WHERE
+      portid = @is_request-port_id AND portmode IS NOT INITIAL INTO @ls_simp.
+
+      IF sy-subrc = 0.
+        ev_successful = abap_false.
+        es_response-code = '1002'. "Port is already open
+
+      ENDIF.
+
+      "Insert port
+      ls_simp-portid = is_request-port_id.
+      ls_simp-portmode = 'OPEN'.
+
+
+      IF is_request-content IS NOT INITIAL.
+        ls_simpc-portid = is_request-port_id.
+        ls_simpc-contentcode = is_request-content.
+        ls_simp-portmode = 'OPEN'.
+      ENDIF.
+
+      IF is_request-content_codes IS NOT INITIAL.
+        LOOP AT is_request-content_codes INTO DATA(ls_cont).
+          CLEAR ls_simpc.
+          ls_simpc-portid = is_request-port_id.
+          ls_simpc-contentcode = ls_cont.
+          ls_simp-portmode = 'OPEN'.
+          MODIFY zswl_t_assimc FROM ls_simpc.
+        ENDLOOP.
+      ENDIF.
+
+      IF is_request-category IS NOT INITIAL.
+        ls_simpc-portid = is_request-port_id.
+        ls_simpc-category = is_request-category.
+        ls_simp-portmode = 'PICK'.
+      ENDIF.
+
+      IF is_request-categories IS NOT INITIAL.
+        LOOP AT is_request-categories INTO DATA(ls_cat).
+          CLEAR ls_simpc.
+          ls_simpc-portid = is_request-port_id.
+          ls_simpc-category = ls_cat.
+          ls_simp-portmode = 'PICK'.
+          MODIFY zswl_t_assimc FROM ls_simpc.
+        ENDLOOP.
+      ENDIF.
+
+
+      INSERT zswl_t_assimp FROM ls_simp.
+      COMMIT WORK AND WAIT.
+
+      ev_successful = abap_true.
+      es_response-port_id = is_request-port_id.
+**TRY.
+*CALL METHOD SUPER->OPENPORT
+*  EXPORTING
+*    IS_REQUEST    =
+**    iv_write_log  = ABAP_TRUE
+**  IMPORTING
+**    es_response   =
+**    ev_successful =
+**    ev_errortext  =
+**  CHANGING
+**    cr_log        =
+*    .
+**  CATCH zcx_swl_as_if_exception.
+**ENDTRY.
+    ENDMETHOD.
+ENDCLASS.

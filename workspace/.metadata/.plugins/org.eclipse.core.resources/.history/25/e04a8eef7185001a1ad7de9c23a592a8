@@ -1,0 +1,507 @@
+sap.ui.define([
+	"sap/ui/core/mvc/Controller",
+	"sap/m/MessageStrip",
+	"sap/base/Log",
+	"sap/ui/model/json/JSONModel",
+	"./BaseController",
+	"sap/ui/core/library",
+	"sap/ui/core/message/Message",
+	"sap/m/MessageToast"
+], function (Controller, MessageStrip, Log, JSONModel, BaseController, Library, Message, MessageToast) {
+	"use strict";
+
+	var MessageType = Library.MessageType;
+
+	return BaseController.extend("com.swl.DECO_ASSIGN_HU_TROLLEY.controller.Main", {
+		onInit: function () {
+
+			//Set the jsonModel for all Elements of the screen
+			var oModelData = new sap.ui.model.json.JSONModel();
+			oModelData.loadData("model/Elements.json");
+			this.getView().setModel(oModelData, "ELEMENTS");
+			//			this.initElementsModel();
+			//Set the jsonModel for the header elements of the screen
+			//			this.initHeaderModel();
+			//Set the Message model
+			this.initMessageModel();
+		},
+
+		onBeforeRendering: function () {
+			//	sap.base.Log.info("Method onBeforeRendering");
+			var oMs = sap.ui.getCore().byId("msgStrip");
+			//debugger
+
+			if (oMs) {
+				oMs.destroy();
+			}
+			// this.buildStorageBin();
+		},
+
+		initView: function () {
+			this.getView().invalidate();
+
+		},
+		
+		_clearMessage: function() {
+			var oMs = sap.ui.getCore().byId("msgStrip");
+			//debugger
+
+			if (oMs) {
+				oMs.destroy();
+			}
+		},
+
+		onDeviation: function () {
+			this.showMessage("No Deviation Popup implemented", MessageType.Error);
+		},
+
+		onClose: function () {
+			this.showMessage("No logic implemented", MessageType.Information);
+		},
+		
+		onSelect: function (event) {
+			var path = event.getSource().getSelectedItem().getBindingContext().getPath();
+			var model = sap.ui.getCore().getModel("Troll");
+
+			var obj = model.getProperty(path);
+		},
+
+		onScanHU: function () {
+			//debugger;
+			this._clearMessage();
+			var oResourceBundle = this.getView().getModel("i18n").getResourceBundle();
+			//var oModelHU = this.getView().getModel();
+			var that = this;
+
+		
+			var oModel = this.getView().getModel("odata");
+			//var propertyString = "/Button2" + "/text";
+			var huident = event.srcElement.value;
+			var lgnum = "TMPL";
+			
+			 //const oModel = new sap.ui.model.odata.ODataModel("/sap/opu/odata/sap/ZYL_YARD_UI_SRV", true);
+             //let setInfo = "(Lgnum='" + lgNum + "',TorKey=guid'" + torKey + "')"
+             oModel.read("/ScanHandlingUnitSet(Lgnum='" + lgnum + "',ScanHU='" + huident + "')", {
+                 urlParameters: {
+                     "$expand": "ScanHU_HUNav"
+                 },
+                 success: function (oData, response) {
+						//Log.info(response);
+						var oText = oResourceBundle.getText("HU_READ_SUCCESS", huident);
+						var oMessage = new Message({
+							message: oText,
+							type: MessageType.Success,
+							target: "/Dummy" //,
+								//processor: view.getModel()
+						});
+						sap.ui.getCore().getMessageManager().addMessages(oMessage);
+
+						MessageToast.show(oText);
+
+						var oModelHU = new sap.ui.model.json.JSONModel();
+						oModelHU.setData(oData);
+						sap.ui.getCore().setModel(oModelHU, "HU");
+						
+						var form = sap.ui.getCore().byId("container-com.swl---Main--innergrid1--FormHU");
+						form.setModel(oModelHU);
+
+						sap.ui.getCore().byId("container-com.swl---Main--innergrid2--scanPos").focus();
+						that.enableElement("btn_info");
+
+                 },
+                 //error: err => {
+                 error: function(oError) {
+                 //sap.ui.core.BusyIndicator.hide();
+                	 sap.ui.getCore().getModel("HU").setData(null);
+
+					var oMsg = oResourceBundle.getText("HU_READ_FAIL", sap.ui.getCore().byId("container-com.swl---Main--innergrid1--scanHU").getValue());
+					var oHL = sap.ui.getCore().byId("container-com.swl---Main--footer--hbox1");
+					var oMs = sap.ui.getCore().byId("msgStrip");
+
+					if (oMs) {
+						oMs.destroy();
+					}
+
+					var oMsgStrip = new sap.m.MessageStrip("msgStrip", {
+						text: oMsg,
+						showCloseButton: false,
+						showIcon: false,
+						type: "Error"
+					});
+					oHL.addItem(oMsgStrip);
+					oInputHU.setValue("");
+
+					that.disableElement("btn_info");
+                 }
+             });
+
+		},
+
+		onScanTrolley: function () {
+			//debugger;
+			this._clearMessage();
+			var oResourceBundle = this.getView().getModel("i18n").getResourceBundle();
+			var that = this;
+			var oInputHU = sap.ui.getCore().byId("container-com.swl---Main--innergrid1--scanHU");
+			
+			if(oInputHU.getValue().length === 0) {
+						var oText = oResourceBundle.getText("NO_HU_SCANNED");
+						this.showMessage(oText, MessageType.Error);
+						return;
+			}
+			
+			var oModel = this.getView().getModel("odata");
+			var oModelJson = this.getView().getModel("trolley");
+
+			//var propertyString = "/Button2" + "/text";
+			var trolley = event.srcElement.value;
+			var lgnum = "TMPL";
+			var request = {
+					"Lgnum": "TMPL",
+					"ScanTrolley": trolley,
+					"ScanTrolley_TrolleyNav": {
+						"LastHU": {
+							"HUGuid": "00000000-0000-0000-0000-000000000000",
+							"HUIdent": oInputHU.getValue(),
+							"HUType": "",
+							"PackMat": {
+								"MatID": "00000000-0000-0000-0000-000000000000",
+								"MatNR": ""
+							}
+						},
+						"Lgnum": "TMPL",
+						"Trolley": trolley
+					},
+					"ScanTrolley_TrolleyContentNav": {
+						"results": [{}]
+					}
+			};
+			oModel.create("/ScanTrolleySet", request, {
+					//oModel.read("/ScanTrolleySet(Lgnum='" + lgnum + "',ScanTrolley='" + trolley + "')?$expand=ScanTrolley_TrolleyNav,ScanTrolley_TrolleyContentNav", {
+					//oModel.read("/ScanTrolleySet(Lgnum='" + lgnum + "',ScanTrolley='" + trolley + "')?$expand=ScanTrolley_TrolleyNav", {
+					success: function (oData, response) {
+						//Log.info(response);
+						var oHU = sap.ui.getCore().byId("container-com.swl---Main--innergrid1--scanHU");
+						var oText = oResourceBundle.getText("HU_PACKED_TO_TROLLEY_SUCCESS", [oHU.getValue(), trolley] );
+						var oMessage = new Message({ 
+							message: oText,
+							type: MessageType.Success,
+							target: "/Dummy" //,
+								//processor: view.getModel()
+						});
+						sap.ui.getCore().getMessageManager().addMessages(oMessage);
+						
+						MessageToast.show(oText);
+						//oModel.refresh(true);
+						var oModelTrolley = new sap.ui.model.json.JSONModel();
+						 oModelTrolley.setData(oData);
+						 sap.ui.getCore().setModel(oModelTrolley, "Troll");
+
+						 var formTrolley = sap.ui.getCore().byId("container-com.swl---Main--innergrid2--FormTrolley");
+						 formTrolley.setModel(oModelTrolley);
+
+						var trolleyCont = sap.ui.getCore().byId("container-com.swl---Main--innergrid3--TblTrolleyContent");
+						trolleyCont.setModel(oModelTrolley);
+//						//column list item creation
+						var oTemplate = new sap.m.ColumnListItem({
+							cells: [new sap.m.Text({
+								text: "{Position}"
+							}), new sap.m.Text({
+								text: "{Product/MatNR}"
+							}), new sap.m.Text({
+								text: "{HU/HUIdent}"
+							}), new sap.m.Text({
+								text: "{HU/HUType}"
+							}), new sap.m.Text({
+								text: "{Quantity/Quan} {Quantity/Unit}"
+							})]
+						});
+							trolleyCont.bindItems("/ScanTrolley_TrolleyContentNav/results", oTemplate);
+
+							//Clear HU fields
+							sap.ui.getCore().getModel("HU").setData(null);
+							oHU.setValue("");
+
+						//Set focus back to HU scan field
+						sap.ui.getCore().byId("container-com.swl---Main--innergrid1--scanHU").focus();
+						//Enable closeTrolley button
+						that.enableElement("btn_closeTrolley");
+					},
+					error: function (oError) {
+//						sap.ui.getCore().getModel("Troll").setData(null);
+//
+//						var trolleyCont = sap.ui.getCore().byId("container-com.swl---Main--innergrid3--TblTrolleyContent");
+//						trolleyCont.setModel(oModelTrolley);
+////						//column list item creation
+//						var oTemplate = new sap.m.ColumnListItem({
+//							cells: [new sap.m.Text({
+//								text: "{Position}"
+//							}), new sap.m.Text({
+//								text: "{Product/MatNR}"
+//							}), new sap.m.Text({
+//								text: "{HU/HUIdent}"
+//							}), new sap.m.Text({
+//								text: "{HU/HUType}"
+//							}), new sap.m.Text({
+//								text: "{Quantity/Quan} {Quantity/Unit}"
+//							})]
+//						});
+//						trolleyCont.bindItems("/ScanTrolley_TrolleyContentNav/results", oTemplate);
+//						that.disableElement("btn_closeTrolley");
+
+						//var oMsg = JSON.parse(oError.responseText);
+						var oInput1 = sap.ui.getCore().byId("container-com.swl---Main--innergrid2--scanPos");
+						var oHU = sap.ui.getCore().byId("container-com.swl---Main--innergrid1--scanHU");
+						var oText = oResourceBundle.getText("HU_PACKED_TO_TROLLEY_FAIL", [oHU.getValue(), oInput1.getValue()] );
+						that.showMessage(oText,MessageType.Error);
+					}
+				}
+
+			);
+			oModel.refresh(true);
+		},
+
+		onCloseTrolley: function () {
+			//debugger;
+			this._clearMessage();
+			var oResourceBundle = this.getView().getModel("i18n").getResourceBundle();
+			//var oModelHU = this.getView().getModel();
+			var that = this;
+
+			var oModel = this.getView().getModel("odata");
+			var oModelTroll = sap.ui.getCore().getModel("Troll");
+			//var propertyString = "/Button2" + "/text";
+			var lgnum = "TMPL";
+			var trolley = oModelTroll.getProperty("/ScanTrolley_TrolleyNav/Trolley");
+			var request = {
+				"Lgnum": lgnum,
+				"UserCommand": "04",
+				"UserCommand_TrolleyNav": {
+					"LastHU": {
+						"HUGuid": "00000000-0000-0000-0000-000000000000",
+						"HUIdent": "",
+						"HUType": "",
+						"PackMat": {
+							"MatID": "00000000-0000-0000-0000-000000000000",
+							"MatNR": ""
+						}
+					},
+					"Lgnum": lgnum,
+					"Trolley": trolley,
+					"ActivArea": "",
+					"WarehouseTask": "000000000000"
+				}
+			};
+			oModel.create("/UserCommandEntCollection", request, {
+					//oModel.read("/ScanHandlingUnitSet(Lgnum='" + lgnum + "',ScanHU='" + huident + "')", { urlParameters: { "$expand":"ScanHU_HUNav" } }, {
+					success: function (oData, response) {
+						//Log.info(response);
+						var oModelTroll = sap.ui.getCore().getModel("Troll");
+						var oText = oResourceBundle.getText("TROLLEY_CLOSE_SUCCESS", oModelTroll.getProperty("/ScanTrolley_TrolleyNav/Trolley").getValue());
+						var oMessage = new Message({
+							message: oText,
+							type: MessageType.Success,
+							target: "/Dummy" //,
+								//processor: view.getModel()
+						});
+						sap.ui.getCore().getMessageManager().addMessages(oMessage);
+
+						MessageToast.show(oText);
+
+						sap.ui.getCore().getModel("Troll").setData(null);
+
+						that.disableElement("btn_closeTrolley");
+						sap.ui.getCore().byId("container-com.swl---Main--innergrid2--scanPos").setValue("");
+						sap.ui.getCore().byId("container-com.swl---Main--innergrid1--scanHU").focus();
+
+					},
+					error: function (oError) {
+						var oModelTroll = sap.ui.getCore().getModel("Troll");
+						var oMsg = oResourceBundle.getText("TROLLEY_CLOSE_FAIL", oModelTroll.getProperty("/ScanTrolley_TrolleyNav/Trolley").getValue());
+						that.showMessage(oMsg, MessageType.Error);
+					}
+				}
+
+			);
+			oModel.refresh(true);
+		},
+
+		onCloseAllTrolley: function () {
+			//debugger;
+			this._clearMessage();
+			var oResourceBundle = this.getView().getModel("i18n").getResourceBundle();
+			//var oModelHU = this.getView().getModel();
+			var that = this;
+
+			var oModel = this.getView().getModel("odata");
+			var oModelTroll = sap.ui.getCore().getModel("Troll");
+			var trolley = oModelTroll.getProperty("/ScanTrolley_TrolleyNav/Trolley");
+			var lgnum = "TMPL";
+			var request = {
+				"Lgnum": lgnum,
+				"UserCommand": "05",
+				"UserCommand_TrolleyNav": {
+					"LastHU": {
+						"HUGuid": "00000000-0000-0000-0000-000000000000",
+						"HUIdent": "",
+						"HUType": "",
+						"PackMat": {
+							"MatID": "00000000-0000-0000-0000-000000000000",
+							"MatNR": ""
+						}
+					},
+					"Lgnum": "",
+					"Trolley": "",
+					"ActivArea": "",
+					"WarehouseTask": "000000000000"
+				}
+			};
+			oModel.create("/UserCommandEntCollection", request, {
+					//oModel.read("/ScanHandlingUnitSet(Lgnum='" + lgnum + "',ScanHU='" + huident + "')", { urlParameters: { "$expand":"ScanHU_HUNav" } }, {
+					success: function (oData, response) {
+						//Log.info(response);
+						var oText = oResourceBundle.getText("TROLLEY_CLOSEALL_SUCCESS");
+						var oMessage = new Message({
+							message: oText,
+							type: MessageType.Success,
+							target: "/Dummy" //,
+								//processor: view.getModel()
+						});
+						sap.ui.getCore().getMessageManager().addMessages(oMessage);
+
+						MessageToast.show(oText);
+
+						sap.ui.getCore().getModel("Troll").setData(null);
+
+						that.disableElement("btn_closeTrolley");
+						sap.ui.getCore().byId("container-com.swl---Main--innergrid2--scanPos").setValue("");
+						sap.ui.getCore().byId("container-com.swl---Main--innergrid1--scanHU").focus();
+
+					},
+					error: function (oError) {
+						var oModelTroll = sap.ui.getCore().getModel("Troll");
+						var oMsg = oResourceBundle.getText("TROLLEY_CLOSEALL_Fail", "DECO1");
+						this.showMessage(oMsg, MessageType.Error);
+					}
+				}
+
+			);
+			oModel.refresh(true);
+		},
+
+		onUndo: function () {
+			//debugger;
+			this._clearMessage();
+			var oResourceBundle = this.getView().getModel("i18n").getResourceBundle();
+			//var oModelHU = this.getView().getModel();
+			var that = this;
+
+			var oModel = this.getView().getModel("odata");
+			var oModelTroll = sap.ui.getCore().getModel("Troll");
+			//var propertyString = "/Button2" + "/text";
+			var lgnum = "TMPL";
+			var trolley = oModelTroll.getProperty("/ScanTrolley_TrolleyNav/Trolley");
+			var request = {
+//				"Lgnum": lgnum,
+//				"UserCommand": "04",
+//			    "UserCommand_TrolleyContentNav" : {
+//			        "results" : [
+//			            "LGNUM": type /SCWM/LGNUM,
+//			            "TROLLEY": type /SCWM/DE_RSRC,
+//			            "POSITION", type Y20_DE_TROLLEY_POSITION,
+//			            "HU_TYPE": HANDLINGUNIT,
+//			            "PRODUCT": type PRODUCT,
+//			            "QUANTITY": type QUANTITY
+//			        ]
+//			      },
+//				}
+			};
+			oModel.create("/UserCommandEntCollection", request, {
+					//oModel.read("/ScanHandlingUnitSet(Lgnum='" + lgnum + "',ScanHU='" + huident + "')", { urlParameters: { "$expand":"ScanHU_HUNav" } }, {
+					success: function (oData, response) {
+						//Log.info(response);
+						var oModelTroll = sap.ui.getCore().getModel("Troll");
+						var oText = oResourceBundle.getText("TROLLEY_CLOSE_SUCCESS", oModelTroll.getProperty("/ScanTrolley_TrolleyNav/Trolley").getValue());
+						var oMessage = new Message({
+							message: oText,
+							type: MessageType.Success,
+							target: "/Dummy" //,
+								//processor: view.getModel()
+						});
+						sap.ui.getCore().getMessageManager().addMessages(oMessage);
+
+						MessageToast.show(oText);
+
+						sap.ui.getCore().getModel("Troll").setData(null);
+
+						that.disableElement("btn_closeTrolley");
+						sap.ui.getCore().byId("container-com.swl---Main--innergrid2--scanPos").setValue("");
+						sap.ui.getCore().byId("container-com.swl---Main--innergrid1--scanHU").focus();
+
+					},
+					error: function (oError) {
+						var oModelTroll = sap.ui.getCore().getModel("Troll");
+						var oMsg = oResourceBundle.getText("TROLLEY_CLOSE_FAIL", oModelTroll.getProperty("/ScanTrolley_TrolleyNav/Trolley").getValue());
+						that.showMessage(oMsg, MessageType.Error);
+					}
+				}
+
+			);
+			oModel.refresh(true);
+		},
+
+		buildStorageBin: function () {
+			//debugger;
+
+			var container = sap.ui.getCore().byId("container-com.swl---Main--innergrid1--ShelfDisplay");
+			var shelfs = 8;
+			var shelfToDisplay = 4;
+			var shelfSections = 3;
+			var targetShelfSection = 2;
+
+			var count;
+			for (count = 1; count <= shelfs; count++) {
+				var id = "stack" + count;
+				var shelf = new sap.m.FlexBox(id, {
+					alignItems: "Start",
+					justifyContent: "Center",
+					height: "30px",
+					width: "70%"
+				});
+				shelf.addStyleClass("stack");
+				if (count === shelfToDisplay) {
+					//debugger;
+					for (var sections = 1; sections <= shelfSections; sections++) {
+						if (sections === targetShelfSection) {
+							var innerBoxSelected = new sap.m.FlexBox(id + sections, {
+								height: "30px",
+								width: "33%",
+								alignItems: "Start",
+								justifyContent: "Center"
+							}).addStyleClass("item2");
+
+							innerBoxSelected.setLayoutData(new sap.m.FlexItemData({
+								growFactor: 1
+							}));
+							shelf.addItem(innerBoxSelected);
+						} else {
+							var innerBox = new sap.m.FlexBox(id + sections, {
+								height: "30px",
+								width: "33%",
+								alignItems: "Start",
+								justifyContent: "Center"
+							}).addStyleClass("item1");
+
+							innerBox.setLayoutData(new sap.m.FlexItemData({
+								growFactor: 1
+							}));
+							shelf.addItem(innerBox);
+						}
+					}
+				}
+				container.addItem(shelf);
+			}
+
+		}
+	});
+});

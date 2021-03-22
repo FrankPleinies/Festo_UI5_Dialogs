@@ -1,0 +1,41 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core" xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:table="sap.ui.table">
+	<VBox height="45rem">
+		<VBox height="85%">
+			<table:Table cellClick="onCellClick" id="tblTrolleyContent" selectionBehavior="RowOnly" noData="keine Daten" rowActionCount="1" rowSelectionChange="onSelect" visibleRowCount="5"
+				selectionMode="Single" rows="{uiTableModel>/items}"  enableColumnReordering="false" width="auto" enableCellFilter="true" sort="sortTable">
+				<table:columns >
+					<table:Column sortProperty="Position" id="col1">
+						<Label text="{i18n>Table_Col1}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{uiTableModel>Position}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="HU/HUIdent">
+						<Label text="{i18n>Table_Col2}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{uiTableModel>HU/HUIdent}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+					<table:Column sortProperty="HU/HUType">
+						<Label text="{i18n>Table_Col4}" class="customTableHeaderSmall"/>
+						<table:template>
+							<Text text="{uiTableModel>HU/HUType}" wrapping="false" class="customTableRowSmall"/>
+						</table:template>
+					</table:Column>
+				</table:columns>
+				<!--<table:rowActionTemplate>-->
+				<!--	<table:RowAction>-->
+				<!--		<table:RowActionItem press="onRowNavigationPressed" type="Navigation" icon="sap-icon://feeder-arrow"/>-->
+				<!--	</table:RowAction>-->
+				<!--</table:rowActionTemplate>-->
+			</table:Table>
+		</VBox>
+			<VBox height="15%">
+				<FlexBox justifyContent="End" alignItems="End" class="sapUiMediumMarginTop">
+					<items>
+						<Button text="{i18n>BtnUndo}" enabled="{ELEMENTS>/btn_undo/enabled}" visible="{ELEMENTS>/btn_undo/visible}" id="btn_undo" press="onUndo" class="sapUiSmallMargin customButton"/>
+					</items>
+				</FlexBox>
+			</VBox>
+		</VBox>
+	</core:FragmentDefinition>

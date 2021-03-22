@@ -1,0 +1,21 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:l="sap.ui.layout"
+	xmlns:table="sap.ui.table"
+	xmlns:form="sap.ui.layout.form"
+	xmlns="sap.m">
+	<VBox justifyContent="SpaceBetween">
+		<FlexBox justifyContent="SpaceBetween">
+			<Text class="customTextSmall" text="{i18n>quantity}"/>
+			<StepInput class="customInput" id="stepInputQuan" change="onQuanChange" value="{modelNewPackNav>/Quantity/Quan}" width="11.15rem"/>
+		</FlexBox>
+		<FlexBox justifyContent="SpaceBetween">
+			<Text class="customTextSmall" text="{i18n>remainQuantity}"/>
+			<Input class="customInput" enabled="false" value="{= ${modelNewPackNav>/RemainQuan/Quan}*1 } {modelNewPackNav>/RemainQuan/Unit}"/>
+		</FlexBox>
+		<FlexBox justifyContent="SpaceBetween">
+			<Text class="customTextSmall" text="{i18n>Form_HndlCode}"/>
+			<Text class="customTextLarge" text="{modelNewPackNav>/HndlCode}"/>
+		</FlexBox>
+	</VBox>
+</core:FragmentDefinition>

@@ -1,0 +1,193 @@
+CLASS y20_cl_dinb_receiving_dpc_ext DEFINITION
+  PUBLIC
+  INHERITING FROM y20_cl_dinb_receiving_dpc
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    METHODS /iwbep/if_mgw_appl_srv_runtime~create_deep_entity REDEFINITION.
+    METHODS /iwbep/if_mgw_appl_srv_runtime~get_entity REDEFINITION.
+*    METHODS /iwbep/if_mgw_appl_srv_runtime~get_entityset REDEFINITION.
+    METHODS /iwbep/if_mgw_appl_srv_runtime~get_expanded_entity REDEFINITION.
+    METHODS /iwbep/if_mgw_appl_srv_runtime~update_entity REDEFINITION.
+  PROTECTED SECTION.
+
+  PRIVATE SECTION.
+    "!<p class="shorttext synchronized">Service Header container</p>
+    DATA mo_container TYPE REF TO /iwbep/if_message_container .
+
+    "!<p class="shorttext synchronized">Add message to service container</p>
+    METHODS add_message_to_odata_container
+      IMPORTING
+        !it_bapiret TYPE bapirettab OPTIONAL .
+    "!<p class="shorttext synchronized">Handle log messages</p>
+    METHODS handle_messages
+      IMPORTING
+        !io_log TYPE REF TO y20_cl_log OPTIONAL .
+ENDCLASS.
+
+
+CLASS y20_cl_dinb_receiving_dpc_ext IMPLEMENTATION.
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~get_expanded_entity.
+    BREAK-POINT ID y20_odata_deco_inbound_receive.
+
+    TRY.
+        DATA(lo_entity) = NEW y20_cl_odata_dinbr_ent_factory( )->create_entity(
+                                                                    iv_entity_name = iv_entity_name
+                                                                    it_key_tab     = it_key_tab
+                                                                    io_expand      = io_expand ).
+        lo_entity->get_expanded_entity(
+          EXPORTING
+            it_key_tab = it_key_tab
+          IMPORTING
+            er_entity  = er_entity
+            et_expanded_tech_clauses = et_expanded_tech_clauses ).
+      CATCH /iwbep/cx_mgw_tech_exception.
+        handle_messages( ).
+        RETURN.
+    ENDTRY.
+    IF lo_entity IS BOUND.
+      handle_messages( lo_entity->get_log( ) ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~update_entity.
+    BREAK-POINT ID y20_odata_deco_inbound_receive.
+    TRY.
+        DATA(lo_entity) = NEW y20_cl_odata_dinbr_ent_factory( )->create_entity(
+                                                                    iv_entity_name = iv_entity_name
+                                                                    it_key_tab     = it_key_tab ).
+        er_entity = lo_entity->update_entity( io_data_provider = io_data_provider ).
+      CATCH /iwbep/cx_mgw_tech_exception.
+        handle_messages( ).
+    ENDTRY.
+    IF lo_entity IS BOUND.
+      handle_messages( lo_entity->get_log( ) ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~create_deep_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DIBR
+* Description :
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    BREAK-POINT ID y20_odata_deco_inbound_receive.
+
+    TRY.
+        DATA(lo_entity) = NEW y20_cl_odata_dinbr_ent_factory( )->create_entity(
+                                                                    iv_entity_name = iv_entity_name
+                                                                    it_key_tab     = it_key_tab
+                                                                    io_expand      = io_expand ).
+        er_deep_entity = lo_entity->create_deep_entity( io_data_provider = io_data_provider ).
+      CATCH /iwbep/cx_mgw_tech_exception.
+        handle_messages( ).
+        RETURN.
+    ENDTRY.
+    IF lo_entity IS BOUND.
+      handle_messages( lo_entity->get_log( ) ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~get_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_DIBR
+* Description :
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+
+    " ------------------------------------------ "
+    " Local Declarations..
+    " ------------------------------------------ "
+
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    BREAK-POINT ID y20_odata_deco_inbound_receive.
+    TRY.
+        DATA(lo_entity) = NEW y20_cl_odata_dinbr_ent_factory( )->create_entity(
+                                                                    iv_entity_name = iv_entity_name
+                                                                    it_key_tab     = it_key_tab ).
+        er_entity = lo_entity->get_entity( it_key_tab = it_key_tab ).
+      CATCH /iwbep/cx_mgw_tech_exception.
+        handle_messages( ).
+    ENDTRY.
+    IF lo_entity IS BOUND.
+      handle_messages( lo_entity->get_log( ) ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD add_message_to_odata_container.
+    IF mo_container IS NOT BOUND.
+      mo_container = mo_context->get_message_container( ).
+    ENDIF.
+
+    IF mo_container IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    IF lines( it_bapiret ) = 0.
+      mo_container->add_message(
+          iv_msg_type    = sy-msgty
+          iv_msg_id      = sy-msgid
+          iv_msg_number  = sy-msgno
+          iv_msg_v1      = sy-msgv1
+          iv_msg_v2      = sy-msgv2
+          iv_msg_v3      = sy-msgv3
+          iv_msg_v4      = sy-msgv4
+          iv_add_to_response_header = abap_true ).
+      RETURN.
+    ENDIF.
+
+    DATA(lt_messages) = it_bapiret.
+    " want to delete messages from message log class
+    " send to UI only messages relevant to the current application
+    DELETE lt_messages WHERE id = 'Y20_MESSAGE_LOG'.
+
+    LOOP AT lt_messages ASSIGNING FIELD-SYMBOL(<ls_message>).
+      mo_container->add_message(
+        EXPORTING
+          iv_msg_type    = <ls_message>-type
+          iv_msg_id      = <ls_message>-id
+          iv_msg_number  = <ls_message>-number
+          iv_msg_v1      = <ls_message>-message_v1
+          iv_msg_v2      = <ls_message>-message_v2
+          iv_msg_v3      = <ls_message>-message_v3
+          iv_msg_v4      = <ls_message>-message_v4
+          iv_add_to_response_header = abap_true ).
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD handle_messages.
+    IF io_log IS SUPPLIED AND io_log IS BOUND.
+      DATA(lt_bapiret) = io_log->get_messages_from_this_log( ).
+      io_log->end_log( ).
+    ENDIF.
+    add_message_to_odata_container( lt_bapiret ).
+  ENDMETHOD.
+
+ENDCLASS.

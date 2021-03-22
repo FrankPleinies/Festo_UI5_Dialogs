@@ -1,0 +1,46 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout" xmlns:table="sap.ui.table"
+	xmlns:form="sap.ui.layout.form" xmlns="sap.m" displayBlock="true">
+	<VBox height="15rem">
+											<table:Table cellClick="onCellClick" id="tblAA" noData="keine Daten" visibleRowCount="5"
+												selectionMode="Single" rows="{pickTableModel>/items}" selectionBehavior="RowOnly" rowSelectionChange="onRowSelectionChangeUiTable" enableColumnReordering="false" enableCellFilter="true">
+												<table:columns>
+													<table:Column>
+														<Label text="{i18n>AATable_Col1}" class="customTableHeaderSmall"/>
+														<table:template>
+															<Text text="{pickTableModel>HUType}" wrapping="false" class="customTableRowSmall"/>
+														</table:template>
+													</table:Column>
+													<table:Column>
+														<Label text="{i18n>AATable_Col2}" class="customTableHeaderSmall"/>
+														<table:template>
+															<Text text="{pickTableModel>Priority}" wrapping="false" class="customTableRowSmall"/>
+														</table:template>
+													</table:Column>
+													<table:Column>
+														<Label text="{i18n>AATable_Col3}" class="customTableHeaderSmall"/>
+														<table:template>
+															<Text text="{pickTableModel>Total}" wrapping="false" class="customTableRowSmall"/>
+														</table:template>
+													</table:Column>
+													<table:Column>
+														<Label text="{i18n>AATable_Col4}" class="customTableHeaderSmall"/>
+														<table:template>
+															<Text text="{pickTableModel>Open}" wrapping="false" class="customTableRowSmall"/>
+														</table:template>
+													</table:Column>
+													<table:Column>
+														<Label text="{i18n>AATable_Col5}" class="customTableHeaderSmall"/>
+														<table:template>
+															<Text text="{pickTableModel>Linked}" wrapping="false" class="customTableRowSmall"/>
+														</table:template>
+													</table:Column>
+													<table:Column>
+														<Label text="{i18n>AATable_Col6}" class="customTableHeaderSmall"/>
+														<table:template>
+															<Text text="{pickTableModel>Pool}" wrapping="false" class="customTableRowSmall"/>
+														</table:template>
+													</table:Column>
+												</table:columns>
+											</table:Table>
+	</VBox>
+</core:FragmentDefinition>

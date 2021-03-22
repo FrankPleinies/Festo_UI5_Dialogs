@@ -1,0 +1,153 @@
+CLASS y20_cl_odata_pphucrt_factory DEFINITION
+  PUBLIC
+  INHERITING FROM y20_cl_odata_entity_factory
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+
+    METHODS create_entity REDEFINITION.
+
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+    "!<p class="shorttext synchronized">Message log</p>
+    DATA mo_log TYPE REF TO y20_cl_log .
+    "!<p class="shorttext synchronized">Get key values from reques</p>
+    METHODS get_keytab_values
+      IMPORTING
+        !it_key_tab              TYPE /iwbep/t_mgw_name_value_pair
+        it_filter_select_options TYPE /iwbep/t_mgw_select_option
+      RETURNING
+        VALUE(rs_keys)           TYPE y20_cl_pick_prep_hucrt_mpc_ext=>tys_entity_keys .
+    "!<p class="shorttext synchronized">Get execution method</p>
+    METHODS get_method_execute
+      IMPORTING
+        !iv_entity_name  TYPE string
+        !it_key_tab      TYPE /iwbep/t_mgw_name_value_pair OPTIONAL
+        !io_expand       TYPE REF TO /iwbep/if_mgw_odata_expand OPTIONAL
+      RETURNING
+        VALUE(rv_result) TYPE string .
+ENDCLASS.
+
+
+
+CLASS y20_cl_odata_pphucrt_factory IMPLEMENTATION.
+
+  METHOD create_entity.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Create execution entity instance
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    mo_log = create_log( iv_extid = y20_cl_pick_prep_hucrt_mpc_ext=>mc_log_extnumber ).
+
+    DATA(ls_keys) = get_keytab_values( it_key_tab = it_key_tab
+                                       it_filter_select_options = it_filter_select_options ).
+    IF ls_keys IS INITIAL.
+      ro_entity = NEW y20_cl_odata_pp_hucreate( io_log = mo_log ).
+    ELSE.
+      ro_entity = NEW y20_cl_odata_pp_hucreate( is_keys = ls_keys
+                                                io_log = mo_log ).
+    ENDIF.
+
+    DATA(lv_method_execute) = get_method_execute( iv_entity_name = iv_entity_name
+                                                  it_key_tab     = it_key_tab
+                                                  io_expand      = io_expand ).
+
+    ro_entity->set_execute_method( lv_method_execute ).
+  ENDMETHOD.
+
+  METHOD get_keytab_values.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Get key values
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    IF lines( it_key_tab ) > 0.
+      LOOP AT it_key_tab ASSIGNING FIELD-SYMBOL(<ls_key>).
+        CASE <ls_key>-name.
+          WHEN y20_cl_pick_prep_hucrt_mpc_ext=>ms_field_name-lgnum.
+            rs_keys-lgnum = <ls_key>-value.
+
+          WHEN y20_cl_pick_prep_hucrt_mpc_ext=>ms_field_name-scan.
+            rs_keys-scanhu = <ls_key>-value.
+
+        ENDCASE.
+      ENDLOOP.
+    ENDIF.
+
+    IF lines( it_filter_select_options ) > 0.
+      LOOP AT it_filter_select_options ASSIGNING FIELD-SYMBOL(<ls_filter>).
+        TRY.
+            CASE <ls_filter>-property.
+              WHEN y20_cl_pick_prep_hucrt_mpc_ext=>ms_field_name-lgnum.
+                rs_keys-lgnum = <ls_filter>-select_options[ 1 ]-low.
+
+              WHEN y20_cl_pick_prep_hucrt_mpc_ext=>ms_field_name-aarea.
+                rs_keys-aarea = <ls_filter>-select_options[ 1 ]-low.
+
+            ENDCASE.
+          CATCH cx_sy_itab_line_not_found.
+        ENDTRY.
+      ENDLOOP.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD get_method_execute.
+************************************************************************
+* Company     : Swisslog AG
+* Package     : Y20_UI_UI5_PPHC
+* Description : Determine execution method
+************************************************************************
+* REVISIONS:
+* ---------
+*
+* Ver. ¦Date      ¦Author        ¦Description
+* -----¦----------¦--------------¦--------------------------------------
+* 1.0  ¦2020-04-08¦B.Sugarev     ¦Initial
+*
+************************************************************************
+    " ------------------------------------------ "
+    "  Processing Logic..
+    " ------------------------------------------ "
+    CASE iv_entity_name.
+      WHEN y20_cl_pick_prep_hucrt_mpc=>gc_hutypelistent.
+        rv_result = y20_cl_pick_prep_hucrt_mpc_ext=>ms_method_key-hutypelist.
+
+      WHEN y20_cl_pick_prep_hucrt_mpc=>gc_filterent.
+        rv_result = y20_cl_pick_prep_hucrt_mpc_ext=>ms_method_key-filter_hutypelist.
+
+      WHEN y20_cl_pick_prep_hucrt_mpc=>gc_nonewhusent.
+        rv_result = y20_cl_pick_prep_hucrt_mpc_ext=>ms_method_key-crete_newhus.
+
+      WHEN y20_cl_pick_prep_hucrt_mpc=>gc_activetrolleyent.
+        rv_result = y20_cl_pick_prep_hucrt_mpc_ext=>ms_method_key-active_trolley.
+
+    ENDCASE.
+
+  ENDMETHOD.
+
+ENDCLASS.

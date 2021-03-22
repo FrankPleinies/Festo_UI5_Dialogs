@@ -1,0 +1,38 @@
+<core:FragmentDefinition xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:table="sap.ui.table">
+    <Dialog title="{i18n>InfoPopupDialogTitle}" id="popupDialog" class="sapUiSizeCozy sapUiContentPadding">
+
+        <table:Table id="uiTablePopup" rows="{modelPopDocHeadNav>/results}" selectionBehavior="RowOnly" selectionMode="Single" visibleRowCount="6" itemsenableColumnReordering="false" width="auto" class="sapUiSmallMarginTop">
+            <table:columns>
+                <table:Column>
+                    <Label text="{i18n>inbDeviveryShort}"/>
+                    <table:template>
+                        <Text text="{= ${modelPopDocHeadNav>DocNo}*1 }"/>
+                    </table:template>
+                </table:Column>
+                <table:Column>
+                    <Label text="{i18n>matNo}"/>
+                    <table:template>
+                        <Text text="{modelPopDocHeadNav>MatNr}"/>
+                    </table:template>
+                </table:Column>
+                <table:Column>
+                    <Label text="{i18n>matDescription}"/>
+                    <table:template>
+                        <Text text="{modelPopDocHeadNav>MatTXT}"/>
+                    </table:template>
+                </table:Column>
+                <table:Column>
+                    <Label text="{i18n>quantity}"/>
+                    <table:template>
+                        <Text text="{modelPopDocHeadNav>Quan/Quan} {modelPopDocHeadNav>Quan/Unit}"/>
+                    </table:template>
+                </table:Column>
+            </table:columns>
+        </table:Table>
+        <buttons>
+            <Button text="{i18n>confirm}" press="onConfirmDialog" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

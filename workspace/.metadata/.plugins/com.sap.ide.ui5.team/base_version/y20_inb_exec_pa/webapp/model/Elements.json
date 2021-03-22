@@ -1,0 +1,24 @@
+{
+	"btn_back": 
+	{
+		"enabled": true,
+		"visible": true
+	},
+	"btn_chgDst":
+	{
+		"enabled": true,
+		"visible": true,
+		"pressed": false
+	},
+	"keyboard":
+	{
+		"inputmode": "none",
+		"editable":  "true"
+	},
+	"btn_keyboard":
+	{
+		"pressed": false
+	}
+	
+		
+}
